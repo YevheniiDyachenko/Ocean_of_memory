@@ -1,0 +1,1172 @@
+/* ==========================================================================
+   Ідеальна Похибка — ретро-термінал (GDD)
+   Коментарі: що де налаштовується
+   ========================================================================== */
+
+/* #region Base: шрифт, скидання, html/body, #root */
+/* --- Шрифт ---
+   VGA-термінальний шрифт. Якщо TTF дає OTS error — конвертуй у WOFF2 і поклади
+   MxPlus_IBM_VGA_9x16.woff2 у assets/fonts/ (наприклад через cloudconvert.com). */
+@font-face {
+  font-family: 'MxPlus IBM VGA';
+  src: url('assets/fonts/MxPlus_IBM_VGA_9x16.woff2') format('woff2'),
+       url('assets/fonts/MxPlus_IBM_VGA_9x16.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Скидання / базові стилі ---
+   box-sizing, нульові відступи для всіх елементів. */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- Сторінка (html, body) ---
+   Висота на весь екран, приховування скролу, шрифт, колір тексту та фону. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
+  color: #39ff14;
+  background: #000;
+}
+
+/* --- Кореневий контейнер (#root) ---
+   Обгортка для всього контенту гри. */
+#root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+/* #endregion */
+
+/* #region Титульний екран */
+/* --- Титульний екран (#title-screen) ---
+   Повноекранний блок: назва гри, титри, джем. Фіксована позиція, зелений текст на чорному. */
+#title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rem;
+  padding-left: 5%;
+  background: #000;
+  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
+  color: #39ff14;
+}
+
+/* Картинка на титульному екрані — з’являється після натискання "Увімкнути термінал". */
+/* Затемнення фону на 25% поверх картинки. */
+#title-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Обгортка фонової картинки: дозволяє використати ::after (віньєтку) поверх зображення. */
+#title-screen .title-screen-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+#title-screen .title-screen-bg .title-screen-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  animation: titleScreenBgAppear 1.8s ease-out 0.4s forwards;
+}
+
+/* Віньєтка поверх фонової картинки: плавний чорний градієнт від країв до центру. */
+#title-screen .title-screen-bg::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 60%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.7) 100%);
+}
+
+@keyframes titleScreenBgAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Обгортка назви гри: зміщення вгору (-20vh), щоб візуально центрувати блок. */
+#title-screen #title-text-wrap {
+  position: relative;
+  z-index: 2;
+ /* margin-top: -20vh; */
+}
+
+/* Назва гри на титульному екрані: великий шрифт, свічення, тінь. */
+#title-text-wrap {
+  font-size: clamp(7rem, 5vw, 7rem);
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-align: center;
+  text-shadow:
+    0 0 20px rgba(57, 255, 20, 0.4), /* cвічення */
+    2px 4px 18px rgba(0,0,0,0.38);   /* тінь */
+}
+
+/* Блимаючий курсор після назви гри (ефект друку). */
+.title-cursor {
+  animation: title-cursor-blink 0.6s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes title-cursor-blink {
+  50% { opacity: 0; }
+}
+
+/* Блок титрів "created by" під назвою. */
+#title-screen #title-credit {
+  position: relative;
+  z-index: 2;
+  margin-top: 1.5rem; /* зміщення титрів нижче відносно назви гри */
+}
+
+/* Розмір і стиль титрів "created by". */
+#title-credit {
+  font-size: clamp(1.5rem, 0.8vw, 3.5rem);
+  letter-spacing: 0.21em;
+  opacity: 1.0; /* прозорість */
+  min-height: 1.5em; /* мінімальна висота */
+  text-shadow:
+    0 0 20px rgba(57, 255, 20, 0.4), /* cвічення */
+    2px 4px 18px rgba(0,0,0,0.38);   /* тінь */
+}
+
+/* Глітч-анімація титрів при появі. */
+#title-credit.title-credit-glitch {
+  animation: title-glitch 0.4s ease-in-out;
+}
+
+/* Блок джем-інфо (назва джему тощо): дрібніший шрифт, трохи прозорий, тінь як у #title-credit. */
+#title-screen #title-jam {
+  position: relative;
+  z-index: 2;
+  margin-top: -1.45rem; /* піднято текст трохи вище відносно титрів */
+  min-height: 1.5em;
+  font-size: clamp(1.5rem, 0.8vw, 3.5rem);
+  letter-spacing: 0.01em;
+  opacity: 1.0;
+  color: rgba(57, 255, 20, 0.9);
+  text-align: center;
+  text-shadow:
+    0 0 20px rgba(57, 255, 20, 0.4), /* cвічення */
+    2px 4px 18px rgba(0,0,0,0.38);   /* тінь */
+}
+
+/* Приховування титульного екрану після переходу до гри. */
+#title-screen.hidden {
+  display: none;
+}
+
+
+/* Прогрес-бар завантаження на титульному екрані: кнопка "Увійти" зверху, потім LOADING... | [сегменти] | XX%. */
+.title-progressbar-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 4rem;
+  width: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  color: #39ff14;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+}
+
+/* Кнопка "Увійти" / старт: зелений контур, пульсація. */
+.title-progressbar-wrap .title-enter-btn {
+  pointer-events: auto;
+  margin-bottom: 10rem;
+  padding: 0.85rem 2rem;
+  font-family: inherit;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  color: #39ff14;
+  background: rgba(12, 83, 29, 0.85);
+  border: 2px solid #39ff14;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.45);
+  transition: background 0.2s, box-shadow 0.2s;
+  animation: titleEnterPulse 2s ease-in-out infinite;
+}
+.title-progressbar-wrap .title-enter-btn:hover {
+  background: rgba(0, 35, 10, 0.95);
+  box-shadow: 0 0 18px rgba(57, 255, 20, 0.65);
+  animation: none;
+}
+.title-progressbar-wrap .title-enter-btn:focus {
+  outline: none;
+  box-shadow: 0 0 18px rgba(57, 255, 20, 0.7);
+}
+
+@keyframes titleEnterPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 12px rgba(57, 255, 20, 0.45);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 22px rgba(57, 255, 20, 0.7);
+    opacity: 0.95;
+  }
+}
+
+/* Рядок прогрес-бару: текст "LOADING...", смуга, відсотки. */
+.title-progressbar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.title-progressbar-label {
+  flex-shrink: 0;
+}
+/* Контейнер сегментів завантаження (зелена рамка). */
+.title-progressbar-bar {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  min-width: 0;
+  border: 2px solid #39ff14;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+}
+/* Один сегмент: порожній за замовчуванням. */
+.title-progressbar-segment {
+  flex: 1;
+  min-width: 4px;
+  background: transparent;
+  transition: background 0.12s ease-out;
+}
+/* Заповнений сегмент (зелений). */
+.title-progressbar-segment.filled {
+  background: #39ff14;
+  box-shadow: 0 0 4px #39ff14;
+}
+/* Відсоток завантаження (наприклад "45%"). */
+.title-progressbar-pct {
+  flex-shrink: 0;
+  min-width: 2.5em;
+}
+
+/* Анімація глітчу титрів: дрібні зміщення та миготіння. */
+@keyframes title-glitch {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  25% { opacity: 0.6; transform: translateX(-3px); }
+  50% { opacity: 1; transform: translateX(2px); }
+  75% { opacity: 0.7; transform: translateX(-1px); }
+}
+/* #endregion */
+
+/* #region Стартовий оверлей */
+/* --- Стартовий оверлей (кнопка "Увімкнути термінал") --- */
+#start-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.9);
+  font-size: 1.25rem;
+  color: #39ff14;
+}
+
+/* Кнопка "Увімкнути термінал" на першому екрані. */
+.start-terminal-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  letter-spacing: 0.08em;
+  color: #39ff14;
+  background: transparent;
+  border: 2px solid #39ff14;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.4);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.start-terminal-btn:hover {
+  background: rgba(57, 255, 20, 0.15);
+  box-shadow: 0 0 18px rgba(57, 255, 20, 0.6);
+}
+.start-terminal-btn:focus {
+  outline: none;
+  box-shadow: 0 0 18px rgba(57, 255, 20, 0.7);
+}
+
+/* Приховування оверлею після кліку. */
+#start-overlay.hidden {
+  display: none;
+}
+/* #endregion */
+
+/* #region Екран терміналу */
+/* --- Екран терміналу: рамка та підписи в кутах ---
+   Яскрава зелена рамка з ефектом свічення (ретро CRT). */
+#terminal-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 3px solid #39ff14;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.5), inset 0 0 30px rgba(57, 255, 20, 0.08);
+  pointer-events: none;
+}
+
+/* Контент і фон терміналу отримують кліки; решта рамки — ні. */
+#terminal-screen > #content,
+#terminal-screen > #bg {
+  pointer-events: auto;
+}
+
+/* --- Системний шум (CRT/статик) поверх екрану терміналу --- */
+.terminal-noise,
+#terminal-noise {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' seed='1'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  animation: terminal-noise-flicker 0.15s steps(1) infinite;
+}
+
+@keyframes terminal-noise-flicker {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.18; }
+}
+
+/* --- Періодичний випадковий спалах білого шуму --- */
+.terminal-noise-burst,
+#terminal-noise-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s ease-out;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)' fill='%23ccc'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+#terminal-noise-burst.active {
+  opacity: 0.45;
+}
+
+/* Підписи в кутах екрану (СИСТЕМА, СТАТУС, В ЕФІРІ). */
+.terminal-label {
+  position: absolute;
+  z-index: 2;
+  font-size: 1.4rem;
+  color: #39ff14;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.8);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* Позиції підписів: лівий верх, правий верх, лівий низ, правий низ. */
+.terminal-label-tl { top: 1rem; left: 1rem; }
+.terminal-label-tr { top: 1rem; right: 1rem; }
+.terminal-label-bl { bottom: 1rem; left: 1rem; }
+.terminal-label-br { bottom: 1rem; right: 1rem; display: flex; align-items: center; gap: 0.35rem; }
+
+/* Червона точка поруч з «В ЕФІРІ». */
+.terminal-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3333;
+  box-shadow: 0 0 8px #ff3333, 0 0 4px #ff3333;
+  animation: terminal-dot-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes terminal-dot-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* --- Фон екрану (#bg) ---
+   Картинка терміналу (bg_terminal.png), позиція center/cover. Шлях до зображення тут. */
+#bg {
+  position: absolute;
+  inset: 0;
+  background: #000 url('assets/images/bg_terminal.png') center/cover no-repeat;
+  z-index: 0;
+}
+
+/* --- Основний контент (#content) ---
+   Ті самі вертикальні відступи, що й вікно "Мої думки", щоб термінал переписка не зміщувався. */
+#content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  padding-top: max(2rem, 5vw);
+  padding-bottom: max(2rem, 5vw);
+  padding-left: 2rem;
+  padding-right: min(420px, 38vw);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+/* #endregion */
+
+/* #region Чат */
+/* --- Блок чату (#chat-wrap) ---
+   Займає всю висоту #content; та сама вертикальна смуга, що й вікно "Мої думки". */
+#chat-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 0 3.5rem;
+  box-sizing: border-box;
+}
+
+/* Підпис над логом чату (наприклад "ТЕРМІНАЛ — ПЕРЕПИСКА"): червоний колір. */
+#chat-label {
+  font-size: 1.4rem;
+  color: #ff5555;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+/* Лог повідомлень: займає вільний простір, скрол завжди видимий. */
+#chat-log {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 0.5rem 0;
+  gap: 0.6rem;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: #39ff14 rgba(0, 26, 0, 0.8);
+}
+#chat-log::-webkit-scrollbar {
+  width: 12px;
+}
+#chat-log::-webkit-scrollbar-track {
+  background: rgba(0, 26, 0, 0.8);
+  border-left: 1px solid rgba(57, 255, 20, 0.3);
+}
+#chat-log::-webkit-scrollbar-thumb {
+  background: #39ff14;
+  border-radius: 2px;
+  min-height: 40px;
+}
+#chat-log::-webkit-scrollbar-thumb:hover {
+  background: #5aff3a;
+}
+/* #endregion */
+
+/* #region Вікно "Мої думки" */
+/* --- Фіксоване вікно "Мої думки" (#thoughts-wrap) ---
+   Зверху до низу справа, з відступами. Прозорий фон. Тільки на ігровому екрані. */
+/* Вікно "Мої думки": фіксовано справа, зелена рамка, напівпрозорий темно-зелений фон. */
+#thoughts-wrap {
+  position: fixed;
+  top: max(2rem, 5vw);
+  bottom: max(2rem, 5vw);
+  right: max(1rem, 2vw);
+  left: auto;
+  width: min(420px, calc(100vw - 3rem));
+  max-width: calc(100vw - 3rem);
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid rgba(57, 255, 20, 0.6);
+  background: rgba(0, 26, 0, 0.548);
+  padding: 0.75rem 1rem;
+  z-index: 4;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Ховати вікно "Мої думки" на екрані заголовка та на оверлеї "Увімкнути термінал". */
+#title-screen:not(.hidden) ~ #thoughts-wrap,
+#start-overlay:not(.hidden) ~ #thoughts-wrap {
+  display: none !important;
+}
+
+/* Підпис блоку думок ("Мої думки"). */
+#thoughts-label {
+  font-size: 0.8rem;
+  color: rgba(57, 255, 20, 0.9);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(57, 255, 20, 0.3);
+  letter-spacing: 0.05em;
+  font-style: italic;
+}
+
+/* Контейнер тексту думок: займає вільний простір, скрол завжди видимий. */
+#thoughts-log {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  gap: 0.5rem;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: #39ff14 rgba(0, 26, 0, 0.8);
+}
+#thoughts-log::-webkit-scrollbar {
+  width: 12px;
+}
+#thoughts-log::-webkit-scrollbar-track {
+  background: rgba(0, 26, 0, 0.8);
+  border-left: 1px solid rgba(57, 255, 20, 0.3);
+}
+#thoughts-log::-webkit-scrollbar-thumb {
+  background: #39ff14;
+  border-radius: 2px;
+  min-height: 40px;
+}
+#thoughts-log::-webkit-scrollbar-thumb:hover {
+  background: #5aff3a;
+}
+
+/* У думках ім'я автора не показується. */
+#thoughts-log .message-speaker,
+#thoughts-log .message-time {
+  display: none;
+}
+
+/* У вікні "Мої думки": аватар зверху, під ним лінія на всю ширину, під нею текст. */
+#thoughts-log .message {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 100%;
+  min-width: 0;
+  gap: 0;
+}
+
+/* Аватар у думках: по центру над текстом. */
+#thoughts-log .message-avatar {
+  align-self: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Текст думки: відділений від аватара горизонтальною лінією на всю ширину. */
+#thoughts-log .message-body {
+  border-top: 1px solid rgba(57, 255, 20, 0.35);
+  padding-top: 0.5rem;
+  margin-top: 0;
+  width: 100%;
+}
+
+/* Колір і стиль тексту думок. Перенос довгих слів, щоб не виходити за рамки. */
+#thoughts-log .message-text {
+  color: rgba(170, 255, 170, 0.95);
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
+}
+/* #endregion */
+
+/* #region Повідомлення чату та думок */
+/* --- Повідомлення чату: вхідні / вихідні ---
+   Вхідні (СИСТЕМА, Кай) — ліворуч, вихідні (Я) — праворуч. Рамки, вирівнювання. */
+.message-incoming {
+  align-self: flex-start;
+  max-width: 85%;
+  border-left: 2px solid rgba(57, 255, 20, 0.5);
+  border-right: none;
+  margin-right: auto;
+}
+
+.message-outgoing {
+  align-self: flex-end;
+  max-width: 85%;
+  border-right: 2px solid rgba(57, 255, 20, 0.5);
+  border-left: none;
+  margin-left: auto;
+  text-align: right;
+}
+
+.message-outgoing .message-speaker {
+  text-align: right;
+}
+
+.message-outgoing .message-text {
+  text-align: right;
+}
+
+/* --- Картка одного повідомлення (.message) ---
+   Один ряд у чаті або в думках: аватар + тіло (ім'я, текст). Анімація появи (messageIn). */
+.message {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+  border-radius: 0.35rem;
+  background: transparent;
+  opacity: 0;
+  animation: messageIn 0.3s ease-out forwards;
+}
+
+/* Обгортка ім'я + текст (без аватарки займає всю ширину). */
+.message-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Аватарка поруч з повідомленням (тільки для Кая). */
+/* Аватарки: Кай (.message-avatar-kai), гравець (.message-avatar-main), система (.message-avatar-system) — однаковий розмір. */
+.message-avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid rgba(57, 255, 20, 0.4);
+}
+
+/* Аватар СИСТЕМИ: червона обводка для відмінності від Кая та гравця. */
+.message-avatar-system {
+  border-color: rgba(255, 85, 85, 0.5);
+}
+
+/* Клас для анімації входу повідомлення (додається в JS). */
+.message-enter {
+  animation: messageIn 0.3s ease-out forwards;
+}
+
+/* Анімація: поява повідомлення (загальна). */
+/* Базова анімація появи повідомлення: знизу вгору, легкий scale. */
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Вхідні повідомлення (СИСТЕМА, Кай) з'являються зліва. */
+.message-incoming.message-enter {
+  animation: messageInFromLeft 0.35s ease-out forwards;
+}
+
+/* Вихідні повідомлення з'являються справа. */
+.message-outgoing.message-enter {
+  animation: messageInFromRight 0.35s ease-out forwards;
+}
+
+/* Вхідні: зсув з лівої сторони. */
+@keyframes messageInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-12px) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+/* Вихідні (Я): зсув з правої сторони. */
+@keyframes messageInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(12px) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+/* --- Глітч-ефект повідомлення ---
+   Тремтіння при заміні тексту (glitch). */
+.message-glitch {
+  animation: messageShake 0.55s ease-in-out;
+}
+
+/* Обгортка одного символу при посимвольному друці та глітч-заміні. */
+.message-char {
+  display: inline;
+}
+
+/* Клас для миготіння символу під час глітч-ефекту (рожево-червоний спалах). */
+.message-char-glitch {
+  animation: messageCharGlitch 0.18s ease-out;
+}
+
+@keyframes messageCharGlitch {
+  0% { opacity: 0.3; color: #ff88aa; text-shadow: 0 0 4px #ff4488; }
+  50% { opacity: 1; color: #ffccdd; text-shadow: 0 0 8px #ff88aa; }
+  100% { opacity: 1; color: inherit; text-shadow: none; }
+}
+
+@keyframes messageShake {
+  0%, 100% { transform: translateX(0); }
+  12% { transform: translateX(-8px); }
+  24% { transform: translateX(8px); }
+  36% { transform: translateX(-6px); }
+  48% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  72% { transform: translateX(4px); }
+  84% { transform: translateX(-2px); }
+  96% { transform: translateX(0); }
+}
+
+/* Тремтіння всього логу чату (horror-сцена). */
+#chat-log.chat-log-shake {
+  animation: chatLogShake 0.55s ease-in-out;
+}
+
+@keyframes chatLogShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-6px); }
+  20% { transform: translateX(6px); }
+  30% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+  90% { transform: translateX(0); }
+}
+
+/* --- Імена авторів повідомлень (.message-speaker) ---
+   Розмір і колір залежать від типу: СИСТЕМА (червоний), Кай (білий/рожевий/жовтий), Я (світло-зелений). */
+.message-speaker {
+  font-size: 1.4rem;
+  margin-bottom: 0.25rem;
+  min-height: 1.2em;
+  opacity: 0.9;
+}
+
+.message-speaker.system {
+  color: #ff5555;
+}
+
+.message-speaker.kai {
+  color: #ffffff;
+}
+
+/* Кай як ілюзія океану — рожевий відтінок. */
+.message-speaker.kai-illusion {
+  color: #ffccdd;
+}
+
+/* Кай як "реальність" — жовтий. */
+.message-speaker.kai-reality {
+  color: #ffcc00;
+}
+
+.message-kai-illusion .message-text {
+  color: #ffccdd;
+}
+
+.message-kai-reality .message-text {
+  color: #ffcc00;
+}
+
+.message-speaker.me {
+  color: #aaffaa;
+}
+
+.message-speaker:empty {
+  display: none;
+}
+
+/* Дата та час повідомлення (локальний час ПК) поруч з іменем. */
+.message-time {
+  font-size: 1.4rem;
+  opacity: 0.85;
+  margin-left: 0.35rem;
+  font-weight: normal;
+  color: rgba(57, 255, 20, 0.75);
+}
+
+/* Тіло повідомлення: розмір шрифту, міжрядковий інтервал, колір. pre-line — переноси \n у римованому тексті. */
+.message-text {
+  font-size: 1.5rem;
+  line-height: 1.5;
+  color: #39ff14;
+  white-space: pre-line;
+}
+
+/* --- Курсор друку ---
+   Блимаюча смуга під час набору тексту. Розмір, колір, анімація blink. */
+.message-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 20px;
+  background: #39ff14;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 0.5s step-end infinite;
+}
+
+.message-cursor.hidden {
+  display: none;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+/* #endregion */
+
+/* #region Вибір та кнопка "Далі" */
+/* --- Блок варіантів вибору (#choices) ---
+   Список кнопок вибору в вікні "Мої думки": гравець обирає репліку або дію. */
+#choices {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  flex-shrink: 0;
+}
+
+/* Кнопка одного варіанту: зелений контур, при hover — заповнення зеленим. */
+#choices .choice-btn {
+  font-family: inherit;
+  font-size: 1rem;
+  color: #39ff14;
+  background: transparent;
+  border: 1px solid #39ff14;
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+#choices .choice-btn:hover {
+  background: #39ff14;
+  color: #000;
+}
+
+/* --- Кнопка "Далі" (#next-btn) ---
+   Продовжити без вибору: показується після повідомлень без choices. Схована класом .hidden. */
+#next-btn {
+  font-family: inherit;
+  font-size: 1rem;
+  color: #39ff14;
+  background: transparent;
+  border: 1px solid #39ff14;
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+#next-btn:hover {
+  background: #39ff14;
+  color: #000;
+}
+
+#next-btn.hidden {
+  display: none;
+}
+/* #endregion */
+
+/* #region Оверлей жаху */
+/* --- Оверлей жаху (#horror-overlay) ---
+   Повноекранний текст у сценах жаху: великий червоний шрифт, анімація тремтіння. */
+#horror-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Текст на оверлеї жаху: розмір, колір, анімація тремтіння. */
+#horror-overlay:not(.hidden) #horror-text {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #f00;
+  animation: text-shake 0.12s ease-in-out infinite;
+}
+
+/* Тремтіння тексту на оверлеї жаху. */
+@keyframes text-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(3px); }
+  75% { transform: translateX(-3px); }
+}
+/* #endregion */
+
+/* #region Міні-гра */
+/* --- Міні-гра (оверлей .minigame-overlay) ---
+   Повноекранний блок для QTE: завдання, таймер, поле введення, підказка. */
+.minigame-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: rgba(0, 20, 0, 0.85);
+  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
+  color: #39ff14;
+}
+
+.minigame-overlay.hidden {
+  display: none !important;
+}
+
+/* Текст завдання міні-гри (наприклад "Введіть слово"). */
+.minigame-prompt {
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  text-align: center;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+  max-width: 90%;
+}
+
+/* Контейнер таймера: горизонтальна смуга, зелена рамка. */
+.minigame-timer-wrap {
+  width: 100%;
+  max-width: 400px;
+  height: 12px;
+  border: 1px solid rgba(57, 255, 20, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.minigame-timer-wrap.hidden {
+  display: none !important;
+}
+
+/* Заповнення таймера: зменшується зліва направо (transform). */
+.minigame-timer-bar {
+  height: 100%;
+  width: 100%;
+  background: #39ff14;
+  transform-origin: left;
+  transition: transform 0.1s linear;
+}
+
+/* Обгортка поля введення для QTE. */
+.minigame-input-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+.minigame-input-wrap.hidden {
+  display: none !important;
+}
+
+/* Поле введення: термінальний шрифт, зелений текст на темному фоні. */
+.minigame-input {
+  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
+  font-size: 1.2rem;
+  color: #39ff14;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(57, 255, 20, 0.6);
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  outline: none;
+}
+
+.minigame-input::placeholder {
+  color: rgba(57, 255, 20, 0.4);
+}
+
+/* Підказка під полем введення (наприклад підказка комбінації). */
+.minigame-hint {
+  font-size: 1rem;
+  color: rgba(57, 255, 20, 0.8);
+  letter-spacing: 0.1em;
+}
+
+.minigame-hint.hidden {
+  display: none !important;
+}
+/* #endregion */
+
+/* #region Екран кінцівки */
+/* --- Затухання екрану перед кінцівкою (#ending-fade-overlay) --- */
+#ending-fade-overlay.ending-fade-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 2s ease; /* затухання екрану перед кінцівкою */
+}
+#ending-fade-overlay.ending-fade-overlay.active {
+  opacity: 1;
+}
+
+/* --- Екран кінцівки (#ending-screen) ---
+   Після завершення гри: назва кінцівки, статистика (вибори, час, distortion), профіль, кнопка "Перезапустити". */
+#ending-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.9);
+}
+
+#ending-screen.hidden {
+  display: none;
+}
+
+/* Заголовок кінцівки (наприклад "КІНЕЦЬ: СИНДРОМ КАПГРА"). */
+#ending-title {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #39ff14;
+  text-align: center;
+}
+
+/* Блок статистики: кількість виборів, час гри, рівень distortion тощо. */
+#ending-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem;
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  background: rgba(0, 30, 0, 0.3);
+  min-width: 280px;
+}
+
+/* Один рядок статистики (наприклад "Кінець: ПАМ'ЯТЬ"). */
+.ending-stat {
+  font-size: 1rem;
+  color: #39ff14;
+}
+
+/* Підпис значення (наприклад "Кінець:", "Рівень деформації:"). */
+.ending-stat-label {
+  color: rgba(57, 255, 20, 0.7);
+  margin-right: 0.5rem;
+}
+
+/* Психологічний профіль на екрані кінцівки. */
+.ending-profile {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(57, 255, 20, 0.25);
+  font-style: italic;
+}
+
+/* Кнопка "Перезапустити гру". */
+#ending-restart-btn {
+  font-family: inherit;
+  font-size: 1.1rem;
+  color: #39ff14;
+  background: transparent;
+  border: 2px solid #39ff14;
+  padding: 0.6rem 2rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+#ending-restart-btn:hover {
+  background: #39ff14;
+  color: #000;
+}
+/* #endregion */
+
+/* #region Утиліти */
+/* --- Утилітарні класи ---
+   .hidden — приховує елемент (display: none). Додається/знімається в JS. */
+.hidden {
+  display: none !important;
+}
+
+/* Порожній чат-лог: мінімальна висота через ::after, щоб блок не зникав візуально. */
+#chat-log:empty::after {
+  content: '';
+  display: block;
+  min-height: 1.5em;
+}
+/* #endregion */

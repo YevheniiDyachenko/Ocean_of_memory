@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ОКЕАН ПАМ'ЯТІ</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="root">
+    <div id="title-screen" class="hidden">
+      <div class="title-screen-bg" id="title-screen-bg">
+        <img src="assets/images/bg_start_screen.png" alt="" class="title-screen-bg-img" />
+      </div>
+      <div id="title-text-wrap">
+        <span id="title-text"></span><span id="title-cursor" class="title-cursor">|</span>
+      </div>
+      <div id="title-credit"></div>
+      <div id="title-jam"><span id="title-jam-text"></span><span id="title-jam-cursor" class="title-cursor title-jam-cursor hidden">|</span></div>
+    </div>
+    <div id="start-overlay">
+      <button type="button" id="start-terminal-btn" class="start-terminal-btn">Увімкнути термінал</button>
+    </div>
+    <div id="terminal-screen">
+      <div id="bg"></div>
+      <div id="terminal-noise" class="terminal-noise" aria-hidden="true"></div>
+      <div id="terminal-noise-burst" class="terminal-noise-burst" aria-hidden="true"></div>
+      <div class="terminal-label terminal-label-tl">СИСТЕМА: ІКАР-2</div>
+      <div class="terminal-label terminal-label-tr" id="datetime-label">ДАТА ТА ЧАС: </div>
+      <script>
+        function updateDateTime() {
+          const label = document.getElementById('datetime-label');
+          if (!label) return;
+          const now = new Date();
+          const pad = n => n.toString().padStart(2, '0');
+          const formatted = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+          label.textContent = 'ДАТА ТА ЧАС: ' + formatted;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+      </script>
+      <div class="terminal-label terminal-label-bl">СТАТУС: АКТИВНИЙ</div>
+      <div class="terminal-label terminal-label-br">
+        <span class="terminal-dot"></span> В ЕФІРІ
+      </div>
+      <div id="content">
+        <div id="chat-wrap">
+          <div id="chat-label">ТЕРМІНАЛ — ПЕРЕПИСКА</div>
+          <div id="chat-log"></div>
+        </div>
+      </div>
+    </div>
+    <div id="thoughts-wrap">
+      <div id="thoughts-label">МОЇ ДУМКИ</div>
+      <div id="thoughts-log"></div>
+      <div id="choices"></div>
+      <button id="next-btn" class="hidden">Далі</button>
+    </div>
+    <div id="minigame-overlay" class="minigame-overlay hidden">
+      <div class="minigame-prompt" id="minigame-prompt"></div>
+      <div class="minigame-timer-wrap hidden" id="minigame-timer-wrap">
+        <div class="minigame-timer-bar" id="minigame-timer-bar"></div>
+      </div>
+      <div class="minigame-input-wrap hidden" id="minigame-input-wrap">
+        <input type="text" id="minigame-input" class="minigame-input" autocomplete="off" />
+      </div>
+      <div class="minigame-hint hidden" id="minigame-hint"></div>
+    </div>
+    <div id="horror-overlay" class="hidden">
+      <span id="horror-text"></span>
+    </div>
+    <div id="ending-fade-overlay" class="ending-fade-overlay" aria-hidden="true"></div>
+    <div id="ending-screen" class="hidden">
+      <div id="ending-title"></div>
+      <div id="ending-stats">
+        <div class="ending-stat"><span class="ending-stat-label">Кінець:</span> <span id="ending-stat-name"></span></div>
+        <div class="ending-stat"><span class="ending-stat-label">Рівень деформації:</span> <span id="ending-stat-distortion"></span></div>
+        <div class="ending-stat"><span class="ending-stat-label">Зроблено виборів:</span> <span id="ending-stat-choices"></span></div>
+        <div class="ending-stat"><span class="ending-stat-label">Час проходження:</span> <span id="ending-stat-time"></span></div>
+        <div class="ending-stat ending-profile"><span class="ending-stat-label">Профіль:</span> <span id="ending-stat-profile"></span></div>
+      </div>
+      <button id="ending-restart-btn">Перезапустити гру</button>
+    </div>
+  </div>
+  <script src="story.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
