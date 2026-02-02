@@ -205,10 +205,11 @@
       pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
   }
 
-  /** Відтворити одноразовий звук (спробувати .wav, .mp3, .ogg по черзі). */
-  function playSound(name) {
+  /** Відтворити одноразовий звук (спробувати .wav, .mp3, .ogg по черзі). volume 0–1 (за замовчуванням 1). */
+  function playSound(name, volume) {
     try {
       var a = new Audio();
+      a.volume = (volume != null && volume >= 0 && volume <= 1) ? volume : 1;
       var base = CONFIG.audioPath + name;
       var idx = 0;
       function tryNext() {
@@ -367,7 +368,7 @@
     el.endingScreen.classList.add('hidden');
     if (options.stopAmbient) stopAmbientSound();
     if (options.ambient) playAmbient(options.ambient, true, options.ambientVolume);
-    if (options.sound) playSound(options.sound);
+    if (options.sound) playSound(options.sound, options.soundVolume);
 
     var msg = document.createElement('div');
     msg.className = 'message message-enter' + getMessageAlignClass(speaker) + getMessageKaiClass(speaker);
@@ -553,7 +554,7 @@
 
     if (options.stopAmbient) stopAmbientSound();
     if (options.ambient) playAmbient(options.ambient, true, options.ambientVolume);
-    if (options.sound) playSound(options.sound);
+    if (options.sound) playSound(options.sound, options.soundVolume);
 
     var msg = document.createElement('div');
     msg.className = 'message message-enter' + getMessageAlignClass(speaker) + getMessageKaiClass(speaker);
@@ -1090,6 +1091,7 @@
       showLine(step.speaker, step.text, {
         next: step.next,
         sound: step.sound,
+        soundVolume: step.soundVolume,
         ambient: step.ambient,
         ambientVolume: step.ambientVolume,
         stopAmbient: step.stopAmbient,
@@ -1100,6 +1102,7 @@
       showLineCycleWords(step.speaker, step.prefix, step.words || [], {
         next: step.next,
         sound: step.sound,
+        soundVolume: step.soundVolume,
         ambient: step.ambient,
         ambientVolume: step.ambientVolume,
         stopAmbient: step.stopAmbient
