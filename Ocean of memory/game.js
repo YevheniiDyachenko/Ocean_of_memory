@@ -16,7 +16,7 @@
     // Аудіо
     audioPath: 'assets/audio/',
     audioExts: ['.wav', '.mp3', '.ogg'],
-    ambientFadeInMs: 10000,
+    ambientFadeInMs: 15000,
     ambientFadeOutMs: 5000,
     // Прокрутка
     scrollBottomThreshold: 80,
@@ -29,7 +29,7 @@
       creditCps: 22,
       creditOld: 'inspired by the book "Solaris" by Stanisław Lem',
       creditNew: 'created by Yevhenii Diachenko ',
-      creditPrefix: 'inspired by ',
+      creditPrefix: 'created by ',
       jam: 'for Ukrainian Micro Visual Novel Jam #2',
       jamCps: 22,
       deleteCps: 25,
@@ -54,7 +54,7 @@
   let choiceAppearTime = null;  // коли з’явилися варіанти вибору
   let finalChoiceEasterEggTimer = null; // таймер пасхалки «ЧОМУ ТИ ВАГАЄШСЯ?»
 
-  /** DOM-елементи (чати, думки, кнопки, оверлеї, титул, фінал, мінігри). */
+  /** DOM-елементи (чати, думки, кнопки, оверлеї, титул, фінал). */
   const el = {
     chatLog: document.getElementById('chat-log'),
     thoughtsLog: document.getElementById('thoughts-log'),
@@ -68,8 +68,7 @@
     titleCursor: document.getElementById('title-cursor'),
     titleCredit: document.getElementById('title-credit'),
     noiseBurst: document.getElementById('terminal-noise-burst'),
-    horrorOverlay: document.getElementById('horror-overlay'),
-    horrorText: document.getElementById('horror-text'),
+    avatarNoiseBurst: document.getElementById('avatar-noise-burst'),
     endingScreen: document.getElementById('ending-screen'),
     endingTitle: document.getElementById('ending-title'),
     endingStatName: document.getElementById('ending-stat-name'),
@@ -79,23 +78,84 @@
     endingStatProfile: document.getElementById('ending-stat-profile'),
     endingRestartBtn: document.getElementById('ending-restart-btn'),
     endingFadeOverlay: document.getElementById('ending-fade-overlay'),
-    minigameOverlay: document.getElementById('minigame-overlay'),
-    minigamePrompt: document.getElementById('minigame-prompt'),
-    minigameTimerWrap: document.getElementById('minigame-timer-wrap'),
-    minigameTimerBar: document.getElementById('minigame-timer-bar'),
-    minigameInputWrap: document.getElementById('minigame-input-wrap'),
-    minigameInput: document.getElementById('minigame-input'),
-    minigameHint: document.getElementById('minigame-hint')
+    avatarImage: document.getElementById('avatar-image'),
+    avatarName: document.getElementById('avatar-name'),
+    avatarOscilloscope: document.getElementById('avatar-oscilloscope')
   };
 
-  // --- Стан мінігри ---
-  var minigameTimeoutId = null;
-  var minigameTimerIntervalId = null;
-  var minigameKeydownHandler = null;
-  var minigameInputHandler = null;
-  var minigameInputKeydownHandler = null;
-  var minigameSequenceIndex = 0;
-  var minigameCurrentStep = null;
+  /** Поточний стан аватара Олесі (з story.js AVATAR_DEFAULTS, оновлюється кроками з avatar). */
+  var currentAvatarState = typeof AVATAR_DEFAULTS !== 'undefined'
+    ? JSON.parse(JSON.stringify(AVATAR_DEFAULTS))
+    : { image: 'assets/images/ch_main.png', name: 'ОЛЕСЯ', heartbeatBpm: 60 };
+
+  var oscilloscopeAnimationId = null;
+  var oscilloscopeStartTime = 0;
+
+  /** Форма хвилі серцебиття (ECG-подібна): phase 0..1, повертає -1..1. */
+  function heartbeatWave(phase) {
+    if (phase < 0.1) return 0;
+    if (phase < 0.18) return (phase - 0.1) / 0.08 * 0.3;
+    if (phase < 0.22) return 0.3 - (phase - 0.18) / 0.04 * 0.5;
+    if (phase < 0.26) return -0.2 + (phase - 0.22) / 0.04 * 1.2;
+    if (phase < 0.32) return 1 - (phase - 0.26) / 0.06 * 1.2;
+    if (phase < 0.42) return -0.2 + (phase - 0.32) / 0.1 * 0.5;
+    if (phase < 0.55) return 0.3 - (phase - 0.42) / 0.13 * 0.3;
+    return 0;
+  }
+
+  /** Малювати осцилограф з ефектом серцебиття. */
+  function drawOscilloscope(canvas, bpm) {
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var h = canvas.height;
+    var periodMs = 60000 / (bpm || 72);
+    var now = Date.now();
+    if (!oscilloscopeStartTime) oscilloscopeStartTime = now;
+    var phase = ((now - oscilloscopeStartTime) % periodMs) / periodMs;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = '#39ff14';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    var points = 120;
+    var history = [];
+    for (var i = 0; i <= points; i++) {
+      var p = (phase + i / points) % 1;
+      var y = heartbeatWave(p);
+      var x = (i / points) * w;
+      var yPx = h / 2 - y * (h * 0.35);
+      history.push({ x: x, y: yPx });
+    }
+    for (var j = 0; j < history.length; j++) {
+      if (j === 0) ctx.moveTo(history[j].x, history[j].y);
+      else ctx.lineTo(history[j].x, history[j].y);
+    }
+    ctx.stroke();
+  }
+
+  /** Запустити анімацію осцилографа. */
+  function startOscilloscope(bpm) {
+    if (oscilloscopeAnimationId) cancelAnimationFrame(oscilloscopeAnimationId);
+    oscilloscopeStartTime = 0;
+    function tick() {
+      drawOscilloscope(el.avatarOscilloscope, bpm);
+      oscilloscopeAnimationId = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  /** Оновити модуль аватара та осцилограф за станом з story.js. */
+  function updateAvatarModule(state) {
+    if (!state) return;
+    if (el.avatarImage && state.image) el.avatarImage.src = state.image;
+    if (el.avatarName && state.name != null) el.avatarName.textContent = state.name;
+    var bpm = state.heartbeatBpm != null ? state.heartbeatBpm : 60;
+    startOscilloscope(bpm);
+  }
 
   /** Чи користувач прокрутив контейнер майже до кінця (щоб не скролити при новому повідомленні, якщо він читає вище). */
   function isNearBottom(container) {
@@ -103,16 +163,16 @@
     return container.scrollTop + container.clientHeight >= container.scrollHeight - CONFIG.scrollBottomThreshold;
   }
 
-  /** Прокрутити лог чату вниз, якщо користувач уже біля низу. */
+  /** Прокрутити лог чату вниз до повідомлення, що друкується. */
   function scrollChatToBottom() {
-    if (el.chatLog && isNearBottom(el.chatLog)) {
+    if (el.chatLog) {
       el.chatLog.scrollTop = el.chatLog.scrollHeight;
     }
   }
 
-  /** Прокрутити лог думок вниз, якщо користувач уже біля низу. */
+  /** Прокрутити лог думок вниз до повідомлення, що друкується. */
   function scrollThoughtsToBottom() {
-    if (el.thoughtsLog && isNearBottom(el.thoughtsLog)) {
+    if (el.thoughtsLog) {
       el.thoughtsLog.scrollTop = el.thoughtsLog.scrollHeight;
     }
   }
@@ -123,6 +183,26 @@
     else scrollChatToBottom();
   }
 
+  /** Показати кнопку «Пропустити» під час друку (викликає skipTypingCallback при кліку). */
+  function showSkipButton() {
+    if (el.nextBtn) {
+      el.nextBtn.textContent = 'Пропустити';
+      el.nextBtn.classList.remove('hidden');
+      el.nextBtn.onclick = function () {
+        if (skipTypingCallback) skipTypingCallback();
+      };
+    }
+  }
+
+  /** Показати кнопку «Далі» після закінчення друку (перехід на nextId). */
+  function showNextButton(nextId) {
+    if (el.nextBtn) {
+      el.nextBtn.textContent = 'Далі';
+      el.nextBtn.classList.remove('hidden');
+      el.nextBtn.onclick = function () { if (nextId) goToStep(nextId); };
+    }
+  }
+
   /** Контейнер для повідомлень: думки (speaker порожній) — thoughts-log, інакше — chat-log. */
   function getMessageContainer(speaker) {
     if (speaker === null || speaker === undefined || speaker === '') return el.thoughtsLog || el.chatLog;
@@ -131,20 +211,21 @@
 
   /* Коліщатко миші скролить панель під курсором (body overflow: hidden). Якщо курсор над областю чату або думок — скролимо відповідний лог. */
   function setupWheelScroll() {
+    // Спростимо - дозволимо браузеру самому обробляти скрол
+    // Закоментуйте весь вміст цієї функції для тестування
+    /*
     try {
-      var chatWrap = document.getElementById('chat-wrap');
-      var thoughtsWrap = document.getElementById('thoughts-wrap');
       var chatLog = document.getElementById('chat-log');
       var thoughtsLog = document.getElementById('thoughts-log');
       if (!chatLog && !thoughtsLog) return;
-
-      function getScrollContainer(node) {
-        if (!node || node === document.body) return null;
-        if (chatWrap && chatWrap.contains(node)) return chatLog;
-        if (thoughtsWrap && thoughtsWrap.contains(node)) return thoughtsLog;
+  
+      function getScrollContainer(target) {
+        if (!target || target === document.body) return null;
+        if (target.closest && target.closest('#chat-wrap')) return chatLog;
+        if (target.closest && target.closest('#thoughts-wrap')) return thoughtsLog;
         return null;
       }
-
+  
       document.addEventListener('wheel', function (e) {
         var container = getScrollContainer(e.target);
         if (!container) return;
@@ -154,10 +235,11 @@
         container.scrollTop = Math.max(0, Math.min(container.scrollTop + delta, maxScroll));
         e.preventDefault();
         e.stopPropagation();
-      }, true);
+      }, { capture: true, passive: false });
     } catch (err) {
       console.warn('Wheel scroll setup:', err);
     }
+    */
   }
 
   /** Очистити лог «Мої думки». */
@@ -349,7 +431,7 @@
   }
 
   /**
-   * Callback для horror/glitch ефекту (опційно).
+   * Callback для glitch ефекту (опційно).
    * Для використання: додай audio/static_glitch.ogg і викликай тут playTypingSound('static_glitch').
    */
   function glitchSoundCallback(event) {
@@ -510,8 +592,7 @@
       typeSoundCallback('end');
       cursorSpan.classList.add('hidden');
       showThoughtsWindow();
-      el.nextBtn.classList.remove('hidden');
-      el.nextBtn.onclick = function () { if (options.next) goToStep(options.next); };
+      showNextButton(options.next);
       scrollToBottom(speaker);
     }
 
@@ -534,6 +615,7 @@
 
     if (prefixChars.length > 0 || words.length > 0) {
       skipTypingCallback = skipToEnd;
+      showSkipButton();
       typeSoundCallback('show');
       run();
     } else {
@@ -615,8 +697,7 @@
     if (!text || text.trim() === '') {
       cursorSpan.classList.add('hidden');
       showThoughtsWindow();
-      el.nextBtn.classList.remove('hidden');
-      el.nextBtn.onclick = function () { if (options.next) goToStep(options.next); };
+      showNextButton(options.next);
       return;
     }
 
@@ -688,10 +769,7 @@
               typeSoundCallback('end');
               cursorSpan.classList.add('hidden');
               showThoughtsWindow();
-              if (options.next) {
-                el.nextBtn.classList.remove('hidden');
-                el.nextBtn.onclick = function () { goToStep(options.next); };
-              }
+              showNextButton(options.next);
               scrollToBottom(speaker);
               skipTypingCallback = null;
               return;
@@ -737,13 +815,11 @@
         typeSoundCallback('end');
         cursorSpan.classList.add('hidden');
         showThoughtsWindow();
-        if (options.next) {
-          el.nextBtn.classList.remove('hidden');
-          el.nextBtn.onclick = function () { goToStep(options.next); };
-        }
+        showNextButton(options.next);
         scrollToBottom(speaker);
         skipTypingCallback = null;
       };
+      showSkipButton();
       cycleTick();
     }
 
@@ -781,16 +857,29 @@
           var glitchSpeed = 20;
           var glitchTimer = null;
 
+          skipTypingCallback = function () {
+            if (glitchTimer) clearTimeout(glitchTimer);
+            glitchTimer = null;
+            for (var gi = 0; gi < maxLen; gi++) {
+              var sp = textSpan.children[gi];
+              if (sp && sp !== cursorSpan) sp.textContent = gi < glitchChars.length ? glitchChars[gi] : '\u00A0';
+            }
+            typeSoundCallback('end');
+            cursorSpan.classList.add('hidden');
+            scrollToBottom(speaker);
+            showThoughtsWindow();
+            showNextButton(options.next);
+            skipTypingCallback = null;
+          };
+          showSkipButton();
+
           function runGlitch() {
             if (charIdx >= maxLen) {
               typeSoundCallback('end');
               cursorSpan.classList.add('hidden');
               scrollToBottom(speaker);
               showThoughtsWindow();
-              if (options.next) {
-                el.nextBtn.classList.remove('hidden');
-                el.nextBtn.onclick = function () { goToStep(options.next); };
-              }
+              showNextButton(options.next);
               scrollToBottom(speaker);
               return;
             }
@@ -810,15 +899,13 @@
       } else {
         cursorSpan.classList.add('hidden');
         showThoughtsWindow();
-        if (options.next) {
-          el.nextBtn.classList.remove('hidden');
-          el.nextBtn.onclick = function () { goToStep(options.next); };
-        }
+        showNextButton(options.next);
         scrollToBottom(speaker);
       }
     }
 
     /** Пропустити друк: вивести весь текст одразу; якщо є lineCycleSuffix — додати prefix + останнє слово і завершити. */
+    showSkipButton();
     skipTypingCallback = function () {
       if (typewriterTimer) clearTimeout(typewriterTimer);
       typewriterTimer = null;
@@ -885,164 +972,17 @@
     // #endregion
     currentStepId = stepId;
     if (stepId === 'start' && !gameStartTime) gameStartTime = Date.now();
+    if (step.avatar) {
+      var av = step.avatar;
+      if (typeof av === 'string') currentAvatarState.image = av;
+      else {
+        if (av.image != null) currentAvatarState.image = av.image;
+        if (av.name != null) currentAvatarState.name = av.name;
+        if (av.heartbeatBpm != null) currentAvatarState.heartbeatBpm = av.heartbeatBpm;
+      }
+    }
+    if (step.avatar || stepId === 'start') updateAvatarModule(currentAvatarState);
     showStep(step);
-  }
-
-  /** Зняти всі слухачі та таймери мінігри. */
-  function clearMinigameListeners() {
-    if (minigameTimeoutId) {
-      clearTimeout(minigameTimeoutId);
-      minigameTimeoutId = null;
-    }
-    if (minigameTimerIntervalId) {
-      clearInterval(minigameTimerIntervalId);
-      minigameTimerIntervalId = null;
-    }
-    if (minigameKeydownHandler) {
-      document.removeEventListener('keydown', minigameKeydownHandler);
-      minigameKeydownHandler = null;
-    }
-    if (minigameInputHandler && el.minigameInput) {
-      el.minigameInput.removeEventListener('input', minigameInputHandler);
-      minigameInputHandler = null;
-    }
-    if (minigameInputKeydownHandler && el.minigameInput) {
-      el.minigameInput.removeEventListener('keydown', minigameInputKeydownHandler);
-      minigameInputKeydownHandler = null;
-    }
-    minigameCurrentStep = null;
-  }
-
-  /** Мінігра пройдена: очистити слухачі, перейти на step.successNext. */
-  function handleMinigameSuccess(step) {
-    clearMinigameListeners();
-    if (el.minigameOverlay) el.minigameOverlay.classList.add('hidden');
-    if (el.content) el.content.classList.remove('hidden');
-    if (step.successSound) playSound(step.successSound);
-    goToStep(step.successNext);
-  }
-
-  /** Мінігра провалена: очистити слухачі, перейти на step.failNext. */
-  function handleMinigameFail(step) {
-    clearMinigameListeners();
-    if (el.minigameOverlay) el.minigameOverlay.classList.add('hidden');
-    if (el.content) el.content.classList.remove('hidden');
-    if (step.failSound) playSound(step.failSound);
-    goToStep(step.failNext);
-  }
-
-  /** Показати мінігру: оверлей, prompt, таймер (якщо є), тип (type_word / key_combo / key_sequence). */
-  function showMinigame(step) {
-    minigameCurrentStep = step;
-    el.nextBtn.classList.add('hidden');
-    el.choices.innerHTML = '';
-    el.content.classList.add('hidden');
-    el.endingScreen.classList.add('hidden');
-    if (el.minigameOverlay) el.minigameOverlay.classList.remove('hidden');
-    if (el.minigamePrompt) el.minigamePrompt.textContent = step.prompt || '';
-    if (el.minigameInputWrap) el.minigameInputWrap.classList.add('hidden');
-    if (el.minigameHint) el.minigameHint.classList.add('hidden');
-    if (el.minigameInput) {
-      el.minigameInput.value = '';
-      el.minigameInput.blur();
-    }
-
-    var timeoutMs = step.timeoutMs || 0;
-    if (timeoutMs > 0 && el.minigameTimerWrap && el.minigameTimerBar) {
-      el.minigameTimerWrap.classList.remove('hidden');
-      var startTime = Date.now();
-      function updateBar() {
-        if (!minigameCurrentStep || minigameCurrentStep.id !== step.id) return;
-        var elapsed = Date.now() - startTime;
-        var remaining = Math.max(0, 1 - elapsed / timeoutMs);
-        el.minigameTimerBar.style.transform = 'scaleX(' + remaining + ')';
-      }
-      updateBar();
-      minigameTimerIntervalId = setInterval(updateBar, 50);
-      minigameTimeoutId = setTimeout(function () {
-        minigameTimeoutId = null;
-        if (minigameTimerIntervalId) {
-          clearInterval(minigameTimerIntervalId);
-          minigameTimerIntervalId = null;
-        }
-        handleMinigameFail(step);
-      }, timeoutMs);
-    } else if (el.minigameTimerWrap) {
-      el.minigameTimerWrap.classList.add('hidden');
-    }
-
-    if (step.minigameType === 'type_word') {
-      // Мінігра: ввести слово (step.expectedWord), Enter — успіх
-      if (el.minigameInputWrap) el.minigameInputWrap.classList.remove('hidden');
-      if (el.minigameInput) {
-        el.minigameInput.focus();
-        var expected = step.expectedWord || '';
-        var caseSensitive = !!step.caseSensitive;
-        minigameInputHandler = function () {
-          var val = el.minigameInput.value;
-          var match = caseSensitive ? val === expected : val.toUpperCase() === expected.toUpperCase();
-          if (match) handleMinigameSuccess(step);
-        };
-        minigameInputKeydownHandler = function (e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            minigameInputHandler();
-          }
-        };
-        el.minigameInput.addEventListener('input', minigameInputHandler);
-        el.minigameInput.addEventListener('keydown', minigameInputKeydownHandler);
-      }
-      return;
-    }
-
-    if (step.minigameType === 'key_combo') {
-      // Мінігра: натиснути комбінацію клавіш (Ctrl+Alt+Shift+Key)
-      var parts = [];
-      if (step.ctrlKey) parts.push('Ctrl');
-      if (step.altKey) parts.push('Alt');
-      if (step.shiftKey) parts.push('Shift');
-      parts.push(step.key || '');
-      if (el.minigameHint) {
-        el.minigameHint.textContent = 'Натисніть: ' + parts.join('+');
-        el.minigameHint.classList.remove('hidden');
-      }
-      minigameKeydownHandler = function (e) {
-        var keyMatch = (e.key || '').toUpperCase() === (step.key || '').toUpperCase();
-        var ctrl = !!step.ctrlKey === !!e.ctrlKey;
-        var alt = !!step.altKey === !!e.altKey;
-        var shift = !!step.shiftKey === !!e.shiftKey;
-        if (keyMatch && ctrl && alt && shift) {
-          e.preventDefault();
-          handleMinigameSuccess(step);
-        }
-      };
-      document.addEventListener('keydown', minigameKeydownHandler);
-      return;
-    }
-
-    if (step.minigameType === 'key_sequence') {
-      // Мінігра: натиснути послідовність клавіш (step.sequence)
-      var seq = step.sequence || [];
-      var keyToSymbol = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
-      var hintParts = seq.map(function (k) { return keyToSymbol[k] || k; });
-      if (el.minigameHint) {
-        el.minigameHint.textContent = 'Послідовність: ' + hintParts.join(' ');
-        el.minigameHint.classList.remove('hidden');
-      }
-      minigameSequenceIndex = 0;
-      minigameKeydownHandler = function (e) {
-        var expected = seq[minigameSequenceIndex];
-        if (!expected) return;
-        if ((e.key || '') === expected) {
-          e.preventDefault();
-          minigameSequenceIndex++;
-          if (minigameSequenceIndex >= seq.length) handleMinigameSuccess(step);
-        } else {
-          minigameSequenceIndex = 0;
-        }
-      };
-      document.addEventListener('keydown', minigameKeydownHandler);
-    }
   }
 
   /**
@@ -1076,7 +1016,7 @@
 
   /**
    * Показати крок історії: line (діалог/думка), lineCycleWords, pause, choice, branch,
-   * ending, horror_shake, minigame. Для line перед показом el_thoughts_jasmine — заміна «калину»→«бузок».
+   * ending. Для line перед показом el_thoughts_jasmine — заміна «калину»→«бузок».
    */
   function showStep(step) {
     // #region agent log
@@ -1116,8 +1056,8 @@
         clearTimeout(finalChoiceEasterEggTimer);
         finalChoiceEasterEggTimer = null;
       }
-      el.nextBtn.classList.add('hidden');
-      el.choices.innerHTML = '';
+      if (el.nextBtn) el.nextBtn.classList.add('hidden');
+      if (el.choices) el.choices.innerHTML = '';
       el.content.classList.remove('hidden');
       el.endingScreen.classList.add('hidden');
       showThoughtsWindow();
@@ -1125,11 +1065,11 @@
       if (step.id === 'the_decision') {
         finalChoiceEasterEggTimer = setTimeout(function () {
           finalChoiceEasterEggTimer = null;
-          var msg = 'СИСТЕМА ОЧІКУЄ РІШЕННЯ.\nРЕКОМЕНДАЦІЯ: ПРИЙНЯТИ ВИБІР. ПРОТОКОЛ НЕ ПРИЙМАЄ ВІДКЛАДЕНЬ.';
-          showLine('СИСТЕМА', msg, { next: null });
+          var msg = 'СИСТЕМА ОЧІКУЄ.\nРЕКОМЕНДАЦІЯ: ПРИЙНЯТИ РІШЕННЯ.';
+          showLine('СИСТЕМА', msg, { next: 'the_decision' });
         }, 10000);
       }
-      step.choices.forEach(function (c) {
+      (step.choices || []).forEach(function (c) {
         var btn = document.createElement('button');
         btn.className = 'choice-btn';
         btn.textContent = c.label;
@@ -1147,12 +1087,13 @@
           distortion += c.distortionDelta;
           goToStep(c.next);
         };
-        el.choices.appendChild(btn);
+        if (el.choices) el.choices.appendChild(btn);
       });
     } else if (step.type === 'branch') {
       // Вибір фіналу за distortion: high (≥2), low (≤−2), mid
-      var id = distortion >= 2 ? step.nextByDistortion.high : distortion <= -2 ? step.nextByDistortion.low : step.nextByDistortion.mid;
-      goToStep(id);
+      var nd = step.nextByDistortion || {};
+      var id = distortion >= 2 ? nd.high : distortion <= -2 ? nd.low : nd.mid;
+      if (id) goToStep(id);
     } else if (step.type === 'ending') {
       // Екран фіналу: затухання екрану, потім заголовок, статистика, кнопка «Перезапустити»
       el.content.classList.add('hidden');
@@ -1172,20 +1113,10 @@
         }
         if (el.endingStatProfile) el.endingStatProfile.textContent = getPsychProfile();
         if (el.endingRestartBtn) el.endingRestartBtn.onclick = restartGame;
-        el.endingScreen.classList.remove('hidden');
+        if (el.endingScreen) el.endingScreen.classList.remove('hidden');
       }, CONFIG.endingFadeMs);
-    } else if (step.type === 'horror_shake') {
-      // Оверлей жаху: текст + звук, через 3 с — перехід на step.next
-      el.content.classList.add('hidden');
-      el.horrorText.textContent = step.text;
-      el.horrorOverlay.classList.remove('hidden');
-      playSound('alarm');
-      setTimeout(function () {
-        el.horrorOverlay.classList.add('hidden');
-        goToStep(step.next);
-      }, 3000);
-    } else if (step.type === 'minigame') {
-      showMinigame(step);
+    } else if (step.next) {
+      goToStep(step.next);
     }
   }
 
@@ -1195,8 +1126,6 @@
       clearTimeout(finalChoiceEasterEggTimer);
       finalChoiceEasterEggTimer = null;
     }
-    clearMinigameListeners();
-    if (el.minigameOverlay) el.minigameOverlay.classList.add('hidden');
     distortion = 0;
     choicesCount = 0;
     skipCount = 0;
@@ -1205,14 +1134,15 @@
     gameStartTime = Date.now();
     currentStepId = 'start';
     skipTypingCallback = null;
+    if (typeof AVATAR_DEFAULTS !== 'undefined') currentAvatarState = JSON.parse(JSON.stringify(AVATAR_DEFAULTS));
     typeSoundCallback('end');
     stopAmbientSound();
-    el.content.classList.remove('hidden');
-    el.chatLog.innerHTML = '';
-    el.thoughtsLog.innerHTML = '';
-    el.choices.innerHTML = '';
-    el.nextBtn.classList.add('hidden');
-    el.endingScreen.classList.add('hidden');
+    if (el.content) el.content.classList.remove('hidden');
+    if (el.chatLog) el.chatLog.innerHTML = '';
+    if (el.thoughtsLog) el.thoughtsLog.innerHTML = '';
+    if (el.choices) el.choices.innerHTML = '';
+    if (el.nextBtn) el.nextBtn.classList.add('hidden');
+    if (el.endingScreen) el.endingScreen.classList.add('hidden');
     if (el.endingFadeOverlay) el.endingFadeOverlay.classList.remove('active');
     goToStep('start');
   }
@@ -1253,6 +1183,19 @@
         el.noiseBurst.classList.remove('active');
         scheduleNoiseBurst();
       }, 120 + Math.random() * 180);
+    }, delay);
+  }
+
+  /** Запланувати періодичні спалахи білого шуму на аватарі Олесі. */
+  function scheduleAvatarNoiseBurst() {
+    if (!el.avatarNoiseBurst) return;
+    var delay = 3000 + Math.random() * 8000;
+    setTimeout(function () {
+      el.avatarNoiseBurst.classList.add('active');
+      setTimeout(function () {
+        el.avatarNoiseBurst.classList.remove('active');
+        scheduleAvatarNoiseBurst();
+      }, 80 + Math.random() * 120);
     }, delay);
   }
 
@@ -1458,6 +1401,7 @@
       gameStartTime = Date.now();
       goToStep('start');
       scheduleNoiseBurst();
+      scheduleAvatarNoiseBurst();
     }, CONFIG.endingFadeMs);
   }
 
@@ -1478,7 +1422,8 @@
     fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:init',message:'DOM elements',data:{chatLog:!!el.chatLog,thoughtsLog:!!el.thoughtsLog},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(function(){});
     // #endregion
     setupWheelScroll();
-    el.nextBtn.onclick = function () {};
+    
+    if (el.nextBtn) el.nextBtn.onclick = function () {};
     if (el.content) el.content.addEventListener('click', onContentClick);
     if (el.titleScreen) {
       el.titleScreen.classList.add('hidden');
@@ -1508,10 +1453,12 @@
         gameStartTime = Date.now();
         goToStep('start');
         scheduleNoiseBurst();
+        scheduleAvatarNoiseBurst();
       };
     } else if (!el.titleScreen) {
       goToStep('start');
       scheduleNoiseBurst();
+      scheduleAvatarNoiseBurst();
     }
   }
 

@@ -48,7 +48,7 @@ html, body {
    Повноекранний блок: назва гри, титри, джем. Фіксована позиція, зелений текст на чорному. */
 #title-screen {
   position: fixed;
-  inset: 0;
+  inset: 0; 
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -60,6 +60,7 @@ html, body {
   font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
   color: #39ff14;
 }
+
 
 /* Картинка на титульному екрані — з’являється після натискання "Увімкнути термінал". */
 /* Затемнення фону на 25% поверх картинки. */
@@ -308,7 +309,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  background: rgba(0, 0, 0, 0.9);
+  background: #000;
   font-size: 1.25rem;
   color: #39ff14;
 }
@@ -347,16 +348,20 @@ html, body {
    Яскрава зелена рамка з ефектом свічення (ретро CRT). */
 #terminal-screen {
   position: absolute;
-  inset: 0;
+  inset: 0rem;  /* або top/right/bottom/left */
+  margin: 0.5rem;
   z-index: 0;
+  display: flex;
+  flex-direction: row;
   border: 3px solid #39ff14;
-  box-shadow: 0 0 20px rgba(57, 255, 20, 0.5), inset 0 0 30px rgba(57, 255, 20, 0.08);
+  box-shadow: 0 0 20px rgba(228, 70, 2, 0.5), inset 0 0 30px rgba(57, 255, 20, 0.08);
   pointer-events: none;
 }
 
-/* Контент і фон терміналу отримують кліки; решта рамки — ні. */
+/* Контент, фон та права колонка терміналу отримують кліки; решта рамки — ні. */
 #terminal-screen > #content,
-#terminal-screen > #bg {
+#terminal-screen > #bg,
+#terminal-screen > #right-column {
   pointer-events: auto;
 }
 
@@ -442,17 +447,18 @@ html, body {
 #content {
   position: relative;
   z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
   height: 100%;
   min-height: 0;
-  width: 100%;
-  padding-top: max(2rem, 5vw);
-  padding-bottom: max(2rem, 5vw);
-  padding-left: 2rem;
-  padding-right: min(420px, 38vw);
+  padding-top: max(1rem, 5vw);
+  padding-bottom: max(1rem, 5vw);
+  padding-left: 1rem;
+  padding-right: 1rem;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -460,18 +466,21 @@ html, body {
 
 /* #region Чат */
 /* --- Блок чату (#chat-wrap) ---
-   Займає всю висоту #content; та сама вертикальна смуга, що й вікно "Мої думки". */
+   Займає всю висоту #content; той самий фон і рамка, що й вікно "Мої думки". */
 #chat-wrap {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: flex-end;
   width: 100%;
   max-width: 100%;
-  flex: 1 1 0;
+  flex: 1;
   min-height: 0;
-  padding: 0 3.5rem;
+  height: 100%;
+  padding: 0.75rem 1rem;
   box-sizing: border-box;
+  border: 2px solid rgba(57, 255, 20, 0.6);
+  background: rgba(0, 26, 0, 0.548);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.3);
 }
 
 /* Підпис над логом чату (наприклад "ТЕРМІНАЛ — ПЕРЕПИСКА"): червоний колір. */
@@ -485,21 +494,19 @@ html, body {
 /* Лог повідомлень: займає вільний простір, скрол завжди видимий. */
 #chat-log {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-end;
   width: 100%;
-  flex: 1 1 0;
+  min-width: 0;
+  flex: 1;
   min-height: 0;
-  overflow-y: scroll;
+  max-height: 100%;
+  overflow-y: auto;
   overflow-x: hidden;
   padding: 0.5rem 0;
-  gap: 0.6rem;
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
   scrollbar-width: auto;
   scrollbar-color: #39ff14 rgba(0, 26, 0, 0.8);
+  display: block;
 }
 #chat-log::-webkit-scrollbar {
   width: 12px;
@@ -518,35 +525,133 @@ html, body {
 }
 /* #endregion */
 
-/* #region Вікно "Мої думки" */
-/* --- Фіксоване вікно "Мої думки" (#thoughts-wrap) ---
-   Зверху до низу справа, з відступами. Прозорий фон. Тільки на ігровому екрані. */
-/* Вікно "Мої думки": фіксовано справа, зелена рамка, напівпрозорий темно-зелений фон. */
-#thoughts-wrap {
-  position: fixed;
-  top: max(2rem, 5vw);
-  bottom: max(2rem, 5vw);
-  right: max(1rem, 2vw);
-  left: auto;
-  width: min(420px, calc(100vw - 3rem));
-  max-width: calc(100vw - 3rem);
-  height: auto;
+/* #region Права колонка: аватар + думки */
+/* --- Права колонка (#right-column) ---
+   Всередині терміналу, містить модуль аватара зверху та вікно "Мої думки" знизу. */
+#right-column {
+  flex: 0 0 min(480px, calc(100vw - 3rem));
+  width: min(480px, calc(100vw - 3rem));
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: max(2rem, 5vw) max(1rem, 2vw);
+  padding-left: 0.2rem;
+  box-sizing: border-box;
+  z-index: 4;
+  overflow: hidden;
+}
+
+/* --- Модуль з аватаром та показниками (#avatar-module) --- */
+.avatar-module {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  border: 2px solid rgba(57, 255, 20, 0.6);
+  border-radius: 5px;
+  padding: 0;
+  background: rgba(0, 26, 0, 0.548);
+  min-height: 140px;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.avatar-module .avatar-left {
+  position: relative;
+  flex: 0 0 50%;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Періодичний білий шум на аватарі Олесі */
+.avatar-noise-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.06s ease-out;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='ab'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23ab)' fill='%23ccc'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+.avatar-noise-burst.active {
+  opacity: 0.35;
+}
+
+.avatar-module .avatar-image {
+  width: 100%;
+  height: 100%;
+  min-height: 140px;
+  object-fit: cover;
+  display: block;
+  animation: avatar-breathe 4s ease-in-out infinite;
+}
+
+@keyframes avatar-breathe {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.025); }
+  70% { transform: scale(1.02); }
+}
+
+.avatar-module .avatar-right {
+  flex: 1 1 50%;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.avatar-module .avatar-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #39ff14;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+/* Осцилограф з ефектом серцебиття */
+.oscilloscope-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   min-height: 0;
+}
+
+.oscilloscope-label {
+  font-size: 0.7rem;
+  color: rgba(57, 255, 20, 0.8);
+  letter-spacing: 0.1em;
+}
+
+.avatar-oscilloscope {
+  width: 100%;
+  height: 80px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(57, 255, 20, 0.5);
+  border-radius: 4px;
+  display: block;
+}
+
+/* --- Вікно "Мої думки" (#thoughts-wrap) --- */
+#thoughts-wrap {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   border: 2px solid rgba(57, 255, 20, 0.6);
   background: rgba(0, 26, 0, 0.548);
   padding: 0.75rem 1rem;
-  z-index: 4;
   overflow-x: hidden;
   overflow-y: hidden;
   box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.3);
-}
-
-/* Ховати вікно "Мої думки" на екрані заголовка та на оверлеї "Увімкнути термінал". */
-#title-screen:not(.hidden) ~ #thoughts-wrap,
-#start-overlay:not(.hidden) ~ #thoughts-wrap {
-  display: none !important;
 }
 
 /* Підпис блоку думок ("Мої думки"). */
@@ -562,22 +667,20 @@ html, body {
 
 /* Контейнер тексту думок: займає вільний простір, скрол завжди видимий. */
 #thoughts-log {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-end;
-  text-align: left;
+  position: relative;
   width: 100%;
   min-width: 0;
-  flex: 1 1 0;
+  flex: 1;
   min-height: 0;
-  overflow-y: scroll;
+  max-height: 100%;
+  overflow-y: auto;
   overflow-x: hidden;
-  gap: 0.5rem;
+  text-align: left;
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
   scrollbar-width: auto;
   scrollbar-color: #39ff14 rgba(0, 26, 0, 0.8);
+  display: block;
 }
 #thoughts-log::-webkit-scrollbar {
   width: 12px;
@@ -597,7 +700,8 @@ html, body {
 
 /* У думках ім'я автора не показується. */
 #thoughts-log .message-speaker,
-#thoughts-log .message-time {
+#thoughts-log .message-time,
+#thoughts-log .message-avatar {
   display: none;
 }
 
@@ -675,6 +779,7 @@ html, body {
   padding: 0.5rem 0.85rem;
   padding-left: 0.85rem;
   padding-right: 0.85rem;
+  margin-bottom: 0.5rem;
   border-radius: 0.35rem;
   background: transparent;
   opacity: 0;
@@ -789,7 +894,7 @@ html, body {
   96% { transform: translateX(0); }
 }
 
-/* Тремтіння всього логу чату (horror-сцена). */
+/* Тремтіння всього логу чату (глітч-ефект). */
 #chat-log.chat-log-shake {
   animation: chatLogShake 0.55s ease-in-out;
 }
@@ -939,129 +1044,6 @@ html, body {
 
 #next-btn.hidden {
   display: none;
-}
-/* #endregion */
-
-/* #region Оверлей жаху */
-/* --- Оверлей жаху (#horror-overlay) ---
-   Повноекранний текст у сценах жаху: великий червоний шрифт, анімація тремтіння. */
-#horror-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-/* Текст на оверлеї жаху: розмір, колір, анімація тремтіння. */
-#horror-overlay:not(.hidden) #horror-text {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #f00;
-  animation: text-shake 0.12s ease-in-out infinite;
-}
-
-/* Тремтіння тексту на оверлеї жаху. */
-@keyframes text-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(3px); }
-  75% { transform: translateX(-3px); }
-}
-/* #endregion */
-
-/* #region Міні-гра */
-/* --- Міні-гра (оверлей .minigame-overlay) ---
-   Повноекранний блок для QTE: завдання, таймер, поле введення, підказка. */
-.minigame-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: 2rem;
-  background: rgba(0, 20, 0, 0.85);
-  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
-  color: #39ff14;
-}
-
-.minigame-overlay.hidden {
-  display: none !important;
-}
-
-/* Текст завдання міні-гри (наприклад "Введіть слово"). */
-.minigame-prompt {
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
-  text-align: center;
-  letter-spacing: 0.05em;
-  line-height: 1.4;
-  max-width: 90%;
-}
-
-/* Контейнер таймера: горизонтальна смуга, зелена рамка. */
-.minigame-timer-wrap {
-  width: 100%;
-  max-width: 400px;
-  height: 12px;
-  border: 1px solid rgba(57, 255, 20, 0.5);
-  background: rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.minigame-timer-wrap.hidden {
-  display: none !important;
-}
-
-/* Заповнення таймера: зменшується зліва направо (transform). */
-.minigame-timer-bar {
-  height: 100%;
-  width: 100%;
-  background: #39ff14;
-  transform-origin: left;
-  transition: transform 0.1s linear;
-}
-
-/* Обгортка поля введення для QTE. */
-.minigame-input-wrap {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  max-width: 320px;
-}
-
-.minigame-input-wrap.hidden {
-  display: none !important;
-}
-
-/* Поле введення: термінальний шрифт, зелений текст на темному фоні. */
-.minigame-input {
-  font-family: 'MxPlus IBM VGA', 'Consolas', 'Courier New', monospace;
-  font-size: 1.2rem;
-  color: #39ff14;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid rgba(57, 255, 20, 0.6);
-  padding: 0.5rem 0.75rem;
-  width: 100%;
-  outline: none;
-}
-
-.minigame-input::placeholder {
-  color: rgba(57, 255, 20, 0.4);
-}
-
-/* Підказка під полем введення (наприклад підказка комбінації). */
-.minigame-hint {
-  font-size: 1rem;
-  color: rgba(57, 255, 20, 0.8);
-  letter-spacing: 0.1em;
-}
-
-.minigame-hint.hidden {
-  display: none !important;
 }
 /* #endregion */
 

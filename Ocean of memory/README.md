@@ -30,7 +30,7 @@
 | `assets/audio/` | Фоновий гул, звуки друку, тривоги тощо |
 | `assets/fonts/` | Шрифт терміналу (WOFF2 / TTF) |
 
-Історія описується кроками з типами: `line`, `choice`, `branch`, `ending`, `pause`, `horror_shake`, `minigame`. Кроки посилаються один на одного через `next`, `choices[].next`, `nextByDistortion` тощо.
+Історія описується кроками з типами: `line`, `choice`, `branch`, `ending`, `pause`. Кроки посилаються один на одного через `next`, `choices[].next`, `nextByDistortion` тощо.
 
 ## Автор
 

@@ -49,25 +49,27 @@
           <div id="chat-log"></div>
         </div>
       </div>
-    </div>
-    <div id="thoughts-wrap">
-      <div id="thoughts-label">МОЇ ДУМКИ</div>
-      <div id="thoughts-log"></div>
-      <div id="choices"></div>
-      <button id="next-btn" class="hidden">Далі</button>
-    </div>
-    <div id="minigame-overlay" class="minigame-overlay hidden">
-      <div class="minigame-prompt" id="minigame-prompt"></div>
-      <div class="minigame-timer-wrap hidden" id="minigame-timer-wrap">
-        <div class="minigame-timer-bar" id="minigame-timer-bar"></div>
+      <div id="right-column">
+        <div id="avatar-module" class="avatar-module">
+          <div class="avatar-left">
+            <img id="avatar-image" class="avatar-image" src="assets/images/ch_main.png" alt="Олеся" />
+            <div id="avatar-noise-burst" class="avatar-noise-burst" aria-hidden="true"></div>
+          </div>
+          <div class="avatar-right">
+            <div class="avatar-name" id="avatar-name">ОЛЕСЯ</div>
+            <div class="oscilloscope-wrap">
+              <div class="oscilloscope-label">ПУЛЬС</div>
+              <canvas id="avatar-oscilloscope" class="avatar-oscilloscope" width="200" height="80"></canvas>
+            </div>
+          </div>
+        </div>
+        <div id="thoughts-wrap">
+          <div id="thoughts-label">МОЇ ДУМКИ</div>
+          <div id="thoughts-log"></div>
+          <div id="choices"></div>
+          <button id="next-btn" class="hidden">Далі</button>
+        </div>
       </div>
-      <div class="minigame-input-wrap hidden" id="minigame-input-wrap">
-        <input type="text" id="minigame-input" class="minigame-input" autocomplete="off" />
-      </div>
-      <div class="minigame-hint hidden" id="minigame-hint"></div>
-    </div>
-    <div id="horror-overlay" class="hidden">
-      <span id="horror-text"></span>
     </div>
     <div id="ending-fade-overlay" class="ending-fade-overlay" aria-hidden="true"></div>
     <div id="ending-screen" class="hidden">
