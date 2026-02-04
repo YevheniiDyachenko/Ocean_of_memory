@@ -2,7 +2,7 @@
 /shelf/
 /workspace.xml
 # Rider ignored files
-/.idea.Ocean of memory.iml
+/.idea.web.iml
 /contentModel.xml
 /projectSettingsUpdater.xml
 /modules.xml
