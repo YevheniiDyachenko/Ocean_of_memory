@@ -52,7 +52,7 @@
       <div id="right-column">
         <div id="avatar-module" class="avatar-module">
           <div class="avatar-left">
-            <img id="avatar-image" class="avatar-image" src="assets/images/ch_main.png" alt="Олеся" />
+            <img id="avatar-image" class="avatar-image" src="assets/animations/avatar_anim.webp" alt="Олеся" />
             <div id="avatar-noise-burst" class="avatar-noise-burst" aria-hidden="true"></div>
           </div>
           <div class="avatar-right">
@@ -84,7 +84,14 @@
       <button id="ending-restart-btn">Перезапустити гру</button>
     </div>
   </div>
-  <script src="story.js"></script>
+  <!-- Порядок критичний: config → story → state → avatar → audio → typewriter → title → game -->
+  <script src="js/config.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/avatar.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/typewriter.js"></script>
+  <script src="js/title.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
