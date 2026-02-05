@@ -2,6 +2,25 @@
  * Типограф: showLineCycleWords (цикл слів), showLine (посимвольний друк, glitch, lineCycleSuffix).
  */
 
+function resetAvatarAfterTyping() {
+  if (typeof currentAvatarState === 'undefined' || typeof AVATAR_DEFAULTS === 'undefined') return;
+  currentAvatarState.image = AVATAR_DEFAULTS.image;
+  currentAvatarState.name = AVATAR_DEFAULTS.name;
+  currentAvatarState.heartbeatBpm = AVATAR_DEFAULTS.heartbeatBpm;
+  updateAvatarModule(currentAvatarState);
+}
+
+function createMessageAvatar(src, className, alt) {
+  var img = document.createElement('img');
+  img.className = className;
+  img.src = src;
+  img.alt = alt || '';
+  img.onerror = function () {
+    if (img && img.parentNode) img.parentNode.removeChild(img);
+  };
+  return img;
+}
+
 /**
  * Показати рядок з циклом слів: спочатку prefix, потім по черзі слова з масиву words
  * (друк → пауза → стирання до prefix → наступне слово). Для ефекту «вагання».
@@ -18,26 +37,15 @@ function showLineCycleWords(speaker, prefix, words, options) {
 
   var msg = document.createElement('div');
   msg.className = 'message message-enter' + getMessageAlignClass(speaker) + getMessageKaiClass(speaker);
-  if (speaker === 'Кай') {
-    var avatarImg = document.createElement('img');
-    avatarImg.className = 'message-avatar message-avatar-kai';
-    avatarImg.src = 'assets/images/ch_kai.png';
-    avatarImg.alt = 'Кай';
-    msg.appendChild(avatarImg);
+  var speakerClass = getSpeakerClass(speaker);
+  if (speakerClass.indexOf('kai') === 0) {
+    msg.appendChild(createMessageAvatar('assets/images/ch_kai.png', 'message-avatar message-avatar-kai', 'Кай'));
   }
-  if (speaker === 'СИСТЕМА' || speaker === '???') {
-    var avatarSys = document.createElement('img');
-    avatarSys.className = 'message-avatar message-avatar-system';
-    avatarSys.src = 'assets/images/ch_system.png';
-    avatarSys.alt = speaker === '???' ? '???' : 'СИСТЕМА';
-    msg.appendChild(avatarSys);
+  if (speakerClass === 'system') {
+    msg.appendChild(createMessageAvatar('assets/images/ch_system.png', 'message-avatar message-avatar-system', speaker === '???' ? '???' : 'СИСТЕМА'));
   }
   if (speaker === null || speaker === undefined || speaker === '') {
-    var avatarMain = document.createElement('img');
-    avatarMain.className = 'message-avatar message-avatar-main';
-    avatarMain.src = 'assets/images/ch_main.png';
-    avatarMain.alt = '';
-    msg.appendChild(avatarMain);
+    msg.appendChild(createMessageAvatar('assets/images/ch_main.png', 'message-avatar message-avatar-main', ''));
   }
   var body = document.createElement('div');
   body.className = 'message-body';
@@ -58,12 +66,8 @@ function showLineCycleWords(speaker, prefix, words, options) {
   body.appendChild(speakerSpan);
   body.appendChild(textSpan);
   msg.appendChild(body);
-  if (speaker === 'Я') {
-    var avatarMe = document.createElement('img');
-    avatarMe.className = 'message-avatar message-avatar-main';
-    avatarMe.src = 'assets/images/ch_main.png';
-    avatarMe.alt = 'Я';
-    msg.appendChild(avatarMe);
+  if (speakerClass === 'me') {
+    msg.appendChild(createMessageAvatar('assets/images/ch_main.png', 'message-avatar message-avatar-main', 'Я'));
   }
   var container = getMessageContainer(speaker);
   if (container) {
@@ -155,6 +159,7 @@ function showLineCycleWords(speaker, prefix, words, options) {
     if (timer) clearTimeout(timer);
     typeSoundCallback('end');
     cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
     showThoughtsWindow();
     showNextButton(options.next);
     scrollToBottom(speaker);
@@ -204,26 +209,15 @@ function showLine(speaker, text, options) {
 
   var msg = document.createElement('div');
   msg.className = 'message message-enter' + getMessageAlignClass(speaker) + getMessageKaiClass(speaker);
-  if (speaker === 'Кай') {
-    var avatarImg = document.createElement('img');
-    avatarImg.className = 'message-avatar message-avatar-kai';
-    avatarImg.src = 'assets/images/ch_kai.png';
-    avatarImg.alt = 'Кай';
-    msg.appendChild(avatarImg);
+  var speakerClass = getSpeakerClass(speaker);
+  if (speakerClass.indexOf('kai') === 0) {
+    msg.appendChild(createMessageAvatar('assets/images/ch_kai.png', 'message-avatar message-avatar-kai', 'Кай'));
   }
-  if (speaker === 'СИСТЕМА' || speaker === '???') {
-    var avatarSys = document.createElement('img');
-    avatarSys.className = 'message-avatar message-avatar-system';
-    avatarSys.src = 'assets/images/ch_system.png';
-    avatarSys.alt = speaker === '???' ? '???' : 'СИСТЕМА';
-    msg.appendChild(avatarSys);
+  if (speakerClass === 'system') {
+    msg.appendChild(createMessageAvatar('assets/images/ch_system.png', 'message-avatar message-avatar-system', speaker === '???' ? '???' : 'СИСТЕМА'));
   }
   if (speaker === null || speaker === undefined || speaker === '') {
-    var avatarMain = document.createElement('img');
-    avatarMain.className = 'message-avatar message-avatar-main';
-    avatarMain.src = 'assets/images/ch_main.png';
-    avatarMain.alt = '';
-    msg.appendChild(avatarMain);
+    msg.appendChild(createMessageAvatar('assets/images/ch_main.png', 'message-avatar message-avatar-main', ''));
   }
   var body = document.createElement('div');
   body.className = 'message-body';
@@ -244,12 +238,8 @@ function showLine(speaker, text, options) {
   body.appendChild(speakerSpan);
   body.appendChild(textSpan);
   msg.appendChild(body);
-  if (speaker === 'Я') {
-    var avatarMe = document.createElement('img');
-    avatarMe.className = 'message-avatar message-avatar-main';
-    avatarMe.src = 'assets/images/ch_main.png';
-    avatarMe.alt = 'Я';
-    msg.appendChild(avatarMe);
+  if (speakerClass === 'me') {
+    msg.appendChild(createMessageAvatar('assets/images/ch_main.png', 'message-avatar message-avatar-main', 'Я'));
   }
   var container = getMessageContainer(speaker);
   if (container) {
@@ -260,6 +250,7 @@ function showLine(speaker, text, options) {
 
   if (!text || text.trim() === '') {
     cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
     showThoughtsWindow();
     showNextButton(options.next);
     return;
@@ -332,6 +323,7 @@ function showLine(speaker, text, options) {
           if (isLast) {
             typeSoundCallback('end');
             cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
             showThoughtsWindow();
             showNextButton(options.next);
             scrollToBottom(speaker);
@@ -378,6 +370,7 @@ function showLine(speaker, text, options) {
       scrollToBottom(speaker);
       typeSoundCallback('end');
       cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
       showThoughtsWindow();
       showNextButton(options.next);
       scrollToBottom(speaker);
@@ -430,6 +423,7 @@ function showLine(speaker, text, options) {
           }
           typeSoundCallback('end');
           cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
           scrollToBottom(speaker);
           showThoughtsWindow();
           showNextButton(options.next);
@@ -441,6 +435,7 @@ function showLine(speaker, text, options) {
           if (charIdx >= maxLen) {
             typeSoundCallback('end');
             cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
             scrollToBottom(speaker);
             showThoughtsWindow();
             showNextButton(options.next);
@@ -462,6 +457,7 @@ function showLine(speaker, text, options) {
       }, 2000);
     } else {
       cursorSpan.classList.add('hidden');
+    resetAvatarAfterTyping();
       showThoughtsWindow();
       showNextButton(options.next);
       scrollToBottom(speaker);
@@ -525,3 +521,15 @@ function showLine(speaker, text, options) {
   }
   typewriterTimer = setTimeout(runTypewriterTick, interval);
 }
+
+
+
+
+
+
+
+
+
+
+
+

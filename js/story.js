@@ -59,6 +59,7 @@ const STORY_STEPS = {
     text: "ТЕРМІНАЛ: АКТИВОВАНИЙ.\nМОДУЛЬ 'ПРОМЕТЕЙ' У ЗОНІ ДОСЯЖНОСТІ.\nЧАС ДО СТИКУВАННЯ: 10 ХВИЛИН.\nПІДГОТУЙТЕ ПРОТОКОЛИ ЕВАКУАЦІЇ.",
     ambient: 'station_bg',
    // ambient: 'ocean_hum_low',
+   sound: 'alert_beep',
     next: 'journal_entry_1'
   },
 
@@ -86,6 +87,8 @@ const STORY_STEPS = {
     speaker: null,
     text: "Станція 'Ікар-2' поділена на три рівні: \n - лабораторія \n - житло \n - техвідсік \nТретій не відвідую... там холодно,  порожньо, та залишились... його речі.\nСистеми працюють ідеально, навіть коли життя навкруги  вже закінчилося.\nВід цього стає ",
     lineCycleSuffix: { prefix: 'трохи ... ', words: ['ніяково', 'страшно', 'моторошно.'] },
+    avatar: 'assets/images/ch_main/ch_think.png',
+    heartbeatBpm: 240,
     next: 'el_chat_1'
   },
 
@@ -137,6 +140,7 @@ const STORY_STEPS = {
     type: 'line',
     speaker: 'Я',
     text: "СИСТЕМА, негайно перевір камери зовнішнього спостереження, сектор А-7.",
+    avatar: 'assets/images/ch_main/ch_say.png',
     next: 'system_cameras_reply'
   },
 
@@ -153,14 +157,13 @@ const STORY_STEPS = {
     type: 'line',
     speaker: 'Я',
     text: "Земля, невідомий фізичний контакт із зовнішньою обшивкою. Сектор А-7.\nПеревіряю системи... Всі показники в нормі. Ні пошкоджень, ні деформацій.\nАле сигнал був. Я його відчула. Станція відреагувала!",
-    avatar: 'assets/animations/avatar_anim.webp',
+    avatar: 'assets/images/ch_main/ch_print.png',
     next: 'el_reaction_choice'
   },
 
   el_reaction_choice: {
     id: 'el_reaction_choice',
     type: 'choice',
-    avatar: 'assets/animations/avatar_idle.webp',
     choices: [
       { label: 'Я знову втрачаю розум?', distortionDelta: +1, next: 'ai_analysis_cold',tooltip: 'Паніка, сумніви, емоційна реакція'}, 
       { label: 'Можливо слід перевірити ще раз?', distortionDelta: -1, next: 'ai_analysis_doubt',tooltip: 'Спокій, методична перевірка, логіка'}
@@ -183,6 +186,7 @@ const STORY_STEPS = {
     text: "Намагаюся повернутися до перевірки систем. \nПальці мимоволі тремтять.\nКай... \nКай? \nЯ відчуваю у повітрі запах його парфумів...\n Ні! Ні! Ні!\n Знову ці галюцінації !!!\n ПЕРЕСТАНЬТЕ!",
     sound: 'whispers',
     soundVolume: 0.6,
+    avatar: 'assets/images/ch_main/ch_panic.png',
     next: 'el_sensory_ignore_2'
   },
 
@@ -193,7 +197,7 @@ const STORY_STEPS = {
     text: "Цей звук кроків з техвідсіку? \nАле ж там нікого немає...\nЕкран переді мною мигнув один раз. \nЧи це був відблиск?",
     sound: 'footsteps_on_metal',
     soundVolume: 1,
-    avatar: 'assets/animations/avatar_scared.webp',
+    avatar: 'assets/images/ch_main/ch_eye_left.png',
     heartbeatBpm: 160,
     next: 'el_chat_3_1'
   },
@@ -218,7 +222,7 @@ const STORY_STEPS = {
     //ambient: 'Error (Remix)',
     // ambient: 'ocean_hum_low',
      ambientVolume: 0.1,
-     avatar: 'assets/animations/avatar_idle.webp',
+     avatar: 'assets/images/ch_main/ch_say.png',
      heartbeatBpm: 60,
     next: 'el_chat_3_2'
   },
