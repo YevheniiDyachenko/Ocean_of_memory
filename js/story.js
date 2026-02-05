@@ -68,6 +68,7 @@ const STORY_STEPS = {
     speaker: 'Я',
     text: "День 312.\nПродовжую писати бортовий журнал.\n'Прометей' прибуває.\nЗа вікном — океан. \nНі хвиль, ні руху. Іноді фіолетовий блиск у глибині.\nАбсолютна тиша і більше нічого... і нікого.",
     //ambient: 'ocean_hum_low',
+    avatar: 'assets/images/ch_main/ch_print.png',
     next: 'journal_entry_2'
   },
 
