@@ -241,6 +241,22 @@ function scheduleAvatarNoiseBurst() {
 }
 
 /** Ініціалізація: скрол коліщатком, клік по контенту (skip), титул або start-overlay, кнопка старту. */
+
+/** ����������� ������������� �����. */
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+    var el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
+  }
+}
 function init() {
   // #region agent log
   fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:init',message:'init',data:{hasSTORY_STEPS:typeof STORY_STEPS!=='undefined',hasGetStep:typeof getStep==='function',chatLog:!!el.chatLog,thoughtsLog:!!el.thoughtsLog},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(function(){});
@@ -256,6 +272,12 @@ function init() {
     el.startOverlay.classList.remove('hidden');
   }
   var startBtn = document.getElementById('start-terminal-btn');
+  var fsBtn = document.getElementById('fullscreen-button');
+  if (fsBtn) {
+    var fsEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled || document.mozFullScreenEnabled || document.msFullscreenEnabled;
+    if (!fsEnabled) fsBtn.classList.add('hidden');
+    fsBtn.onclick = toggleFullscreen;
+  }
   if (startBtn) {
     startBtn.onclick = function () {
       if (el.titleScreen && !titleSequenceShown) {
@@ -293,3 +315,4 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
