@@ -5,12 +5,8 @@
 
 /** Перейти до кроку історії за id; викликає getStep з story.js і showStep. */
 function goToStep(stepId) {
-  // #region agent log
   var step = getStep(stepId);
-  fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:goToStep',message:'goToStep',data:{stepId:stepId,stepNull:!step},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(function(){});
   if (!step) return;
-  fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:goToStep',message:'goToStep OK',data:{stepId:stepId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H5'})}).catch(function(){});
-  // #endregion
   currentStepId = stepId;
   if (stepId === 'start' && !gameStartTime) gameStartTime = Date.now();
   if (step.avatar) {
@@ -23,6 +19,7 @@ function goToStep(stepId) {
     }
   }
   if (step.avatar || stepId === 'start') updateAvatarModule(currentAvatarState);
+  if (step.dockingLabel) setDockingLabel(step.dockingLabel.text, step.dockingLabel.color);
   showStep(step);
 }
 
@@ -60,9 +57,6 @@ function replaceKalynaWithBuzokInPreviousMessage() {
  * ending. Для line перед показом el_thoughts_jasmine — заміна «калину»→«бузок».
  */
 function showStep(step) {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:showStep',message:'showStep',data:{stepId:step.id,stepType:step.type},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(function(){});
-  // #endregion
   skipTypingCallback = null;
   typeSoundCallback('end');
   if (step.type === 'line') {
@@ -143,9 +137,7 @@ function showStep(step) {
     setTimeout(function () {
       if (el.endingFadeOverlay) el.endingFadeOverlay.classList.remove('active');
       el.endingTitle.textContent = step.title;
-      if (el.endingStatName) el.endingStatName.textContent = step.title.replace(/^КІНЕЦЬ: /, '');
       if (el.endingStatDistortion) el.endingStatDistortion.textContent = distortion;
-      if (el.endingStatChoices) el.endingStatChoices.textContent = choicesCount;
       if (el.endingStatTime) {
         var sec = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 0;
         var m = Math.floor(sec / 60);
@@ -258,11 +250,6 @@ function toggleFullscreen() {
   }
 }
 function init() {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:init',message:'init',data:{hasSTORY_STEPS:typeof STORY_STEPS!=='undefined',hasGetStep:typeof getStep==='function',chatLog:!!el.chatLog,thoughtsLog:!!el.thoughtsLog},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(function(){});
-  fetch('http://127.0.0.1:7242/ingest/563d15b4-89e0-4836-8fd1-b648b6c6d8b7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game.js:init',message:'DOM elements',data:{chatLog:!!el.chatLog,thoughtsLog:!!el.thoughtsLog},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(function(){});
-  // #endregion
-
   if (el.nextBtn) el.nextBtn.onclick = function () {};
   if (el.content) el.content.addEventListener('click', onContentClick);
   if (el.titleScreen) {

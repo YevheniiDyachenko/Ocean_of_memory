@@ -42,7 +42,7 @@ function parseDockingTimeToSeconds(text) {
 function getDockingColorByTime(text) {
   var sec = parseDockingTimeToSeconds(text);
   if (sec === null) return dockingLabelState.color || null;
-  if (sec >= 9) return rgba(57, 255, 20, 0.8); // >= 00:09 
+  if (sec >= 9) return 'rgba(57, 255, 20, 0.8)'; // >= 00:09 
   if (sec >= 6) return '#ffffff'; // 00:08 - 00:06 
   if (sec > 3) return '#ffcc00'; // 00:05 - 00:03
   return '#ff5555';  // <= 00:03 
@@ -82,9 +82,7 @@ var el = {
   avatarNoiseBurst: document.getElementById('avatar-noise-burst'),
   endingScreen: document.getElementById('ending-screen'),
   endingTitle: document.getElementById('ending-title'),
-  endingStatName: document.getElementById('ending-stat-name'),
   endingStatDistortion: document.getElementById('ending-stat-distortion'),
-  endingStatChoices: document.getElementById('ending-stat-choices'),
   endingStatTime: document.getElementById('ending-stat-time'),
   endingStatProfile: document.getElementById('ending-stat-profile'),
   endingRestartBtn: document.getElementById('ending-restart-btn'),
