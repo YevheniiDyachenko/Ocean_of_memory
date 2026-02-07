@@ -242,7 +242,7 @@ function scheduleAvatarNoiseBurst() {
 
 /** Ініціалізація: скрол коліщатком, клік по контенту (skip), титул або start-overlay, кнопка старту. */
 
-/** ����������� ������������� �����. */
+/** Перемикання повноекранного режиму. */
 function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
     var el = document.documentElement;

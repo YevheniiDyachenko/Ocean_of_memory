@@ -18,6 +18,53 @@ var hesitationTimes = [];     // затримки перед вибором у �
 var choiceAppearTime = null;  // коли з'явилися варіанти вибору
 var finalChoiceEasterEggTimer = null; // таймер пасхалки «ЧОМУ ТИ ВАГАЄШСЯ?»
 
+// --- Стан лейбла "ДО СТИКУВАННЯ" (можна змінювати зі story.js) ---
+var dockingLabelState = {
+  text: '00:10',
+  color: null
+};
+
+function parseDockingTimeToSeconds(text) {
+  if (!text) return null;
+  var t = ('' + text).trim();
+  if (t.indexOf(':') !== -1) {
+    var parts = t.split(':').map(function (p) { return p.trim(); });
+    if (parts.length === 2 || parts.length === 3) {
+      var nums = parts.map(function (p) { return p === '' ? NaN : Number(p); });
+      if (nums.some(function (n) { return isNaN(n); })) return null;
+      if (parts.length === 2) return nums[0] * 60 + nums[1];
+      return nums[0] * 3600 + nums[1] * 60 + nums[2];
+    }
+  }
+  return null;
+}
+
+function getDockingColorByTime(text) {
+  var sec = parseDockingTimeToSeconds(text);
+  if (sec === null) return dockingLabelState.color || null;
+  if (sec >= 9) return rgba(57, 255, 20, 0.8); // >= 00:09 
+  if (sec >= 6) return '#ffffff'; // 00:08 - 00:06 
+  if (sec > 3) return '#ffcc00'; // 00:05 - 00:03
+  return '#ff5555';  // <= 00:03 
+}
+
+function updateDockingLabel() {
+  var label = document.getElementById('datetime-label');
+  if (!label) return;
+  var spacing = '\u00A0\u00A0\u00A0\u00A0';
+  var valueColor = getDockingColorByTime(dockingLabelState.text);
+  var baseColor = 'rgba(57, 255, 20, 0.8)';
+  var valueStyle = valueColor ? 'color:' + valueColor + ';' : '';
+  label.innerHTML = '<span class="dock-label" style="color:' + baseColor + ';">ДО СТИКУВАННЯ: </span>' +
+    '<span class="dock-value" style="' + valueStyle + '">' + dockingLabelState.text + spacing + '</span>';
+}
+
+function setDockingLabel(text, color) {
+  if (text != null) dockingLabelState.text = text;
+  if (color != null) dockingLabelState.color = color;
+  updateDockingLabel();
+}
+
 /** DOM-елементи (чати, думки, кнопки, оверлеї, титул, фінал). */
 var el = {
   chatLog: document.getElementById('chat-log'),
@@ -148,3 +195,5 @@ function getMessageTimestamp() {
   return pad(now.getDate()) + '.' + pad(now.getMonth() + 1) + '.' + now.getFullYear() + ' ' +
     pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
 }
+
+updateDockingLabel();

@@ -1,11 +1,14 @@
 /**
- * Осцилограф пульсу та оновлення модуля аватара (зображення, ім'я, BPM).
+ * Oscilloscope pulse rendering (ECG-like).
  */
 
 var oscilloscopeAnimationId = null;
 var oscilloscopeStartTime = 0;
+var oscilloscopeCurrentBpm = null;
+var oscilloscopeTargetBpm = null;
+var oscilloscopeLastTick = 0;
+var oscilloscopeSpikeUntil = 0;
 
-/** Форма хвилі серцебиття (ECG-подібна): phase 0..1, повертає -1..1. */
 function heartbeatWave(phase) {
   if (phase < 0.1) return 0;
   if (phase < 0.18) return (phase - 0.1) / 0.08 * 0.3;
@@ -17,13 +20,20 @@ function heartbeatWave(phase) {
   return 0;
 }
 
-/** Малювати осцилограф з ефектом серцебиття. */
+function clampBpm(bpm) {
+  if (bpm == null || isNaN(bpm)) return 60;
+  if (bpm < 20) return 20;
+  if (bpm > 240) return 240;
+  return bpm;
+}
+
 function drawOscilloscope(canvas, bpm) {
   if (!canvas || !canvas.getContext) return;
   var ctx = canvas.getContext('2d');
   var w = canvas.width;
   var h = canvas.height;
-  var periodMs = 60000 / (bpm || 72);
+  var safeBpm = bpm || 72;
+  var periodMs = 60000 / safeBpm;
   var now = Date.now();
   if (!oscilloscopeStartTime) oscilloscopeStartTime = now;
   var phase = ((now - oscilloscopeStartTime) % periodMs) / periodMs;
@@ -37,9 +47,19 @@ function drawOscilloscope(canvas, bpm) {
 
   var points = 120;
   var history = [];
+  var bpmNorm = Math.max(0, Math.min(1, (safeBpm - 40) / 160));
+  var ampScale = 0.7 + bpmNorm * 0.6; // amplitude grows with BPM
+  var noiseScale = 0.02 + bpmNorm * 0.08; // noise grows with BPM
+
+  var spikeActive = now < oscilloscopeSpikeUntil;
+  var spikeScale = spikeActive ? 1.6 : 1.0;
+
   for (var i = 0; i <= points; i++) {
     var p = (phase + i / points) % 1;
-    var y = heartbeatWave(p);
+    var y = heartbeatWave(p) * ampScale * spikeScale;
+    var t = now / 60;
+    var noise = (Math.sin(t + i * 0.35) + Math.sin(t * 0.7 + i * 0.12)) * 0.5;
+    y += noise * noiseScale;
     var x = (i / points) * w;
     var yPx = h / 2 - y * (h * 0.35);
     history.push({ x: x, y: yPx });
@@ -51,22 +71,39 @@ function drawOscilloscope(canvas, bpm) {
   ctx.stroke();
 }
 
-/** Запустити анімацію осцилографа. */
 function startOscilloscope(bpm) {
   if (oscilloscopeAnimationId) cancelAnimationFrame(oscilloscopeAnimationId);
   oscilloscopeStartTime = 0;
+  oscilloscopeTargetBpm = clampBpm(bpm || 72);
+  if (oscilloscopeCurrentBpm == null) oscilloscopeCurrentBpm = oscilloscopeTargetBpm;
+  oscilloscopeLastTick = 0;
   function tick() {
-    drawOscilloscope(el.avatarOscilloscope, bpm);
+    var now = Date.now();
+    var dt = oscilloscopeLastTick ? (now - oscilloscopeLastTick) : 16;
+    oscilloscopeLastTick = now;
+    var smoothing = 1 - Math.exp(-dt / 250); // smooth BPM
+    oscilloscopeCurrentBpm = oscilloscopeCurrentBpm + (oscilloscopeTargetBpm - oscilloscopeCurrentBpm) * smoothing;
+
+    var chance = 0.002 + Math.max(0, oscilloscopeCurrentBpm - 80) / 20000;
+    if (now > oscilloscopeSpikeUntil && Math.random() < Math.min(chance, 0.02)) {
+      oscilloscopeSpikeUntil = now + 120;
+    }
+
+    drawOscilloscope(el.avatarOscilloscope, oscilloscopeCurrentBpm);
     oscilloscopeAnimationId = requestAnimationFrame(tick);
   }
   tick();
 }
 
-/** Оновити модуль аватара та осцилограф за станом з story.js. */
-function updateAvatarModule(state) {
+function updatePulseGraph(state) {
   if (!state) return;
-  if (el.avatarImage && state.image) el.avatarImage.src = state.image;
-  if (el.avatarName && state.name != null) el.avatarName.textContent = state.name;
   var bpm = state.heartbeatBpm != null ? state.heartbeatBpm : 60;
   startOscilloscope(bpm);
+}
+
+function updateAvatarModule(state) {
+  if (!state || typeof el === 'undefined') return;
+  if (el.avatarImage && state.image) el.avatarImage.src = state.image;
+  if (el.avatarName) el.avatarName.textContent = state.name || '';
+  updatePulseGraph(state);
 }

@@ -45,7 +45,7 @@
 
 /** Стан аватара Олесі: image, name, heartbeatBpm (частота серцебиття, удари/хв). */
 const AVATAR_DEFAULTS = {
-  image: 'assets/animations/avatar_idle.webp',
+  image: 'assets/images/ch_main/сh_idle_anim.webp',
   name: 'ОЛЕСЯ',
   heartbeatBpm: 40
 };
@@ -56,8 +56,11 @@ const STORY_STEPS = {
     id: 'start',
     type: 'line',
     speaker: 'СИСТЕМА',
+    dockingLabel: { text: '00:02', color: null },
     text: "ТЕРМІНАЛ: АКТИВНИЙ.\nМОДУЛЬ 'ПРОМЕТЕЙ': У ЗОНІ ДОСЯЖНОСТІ.\nСТИКУВАННЯ: 10 ХВ.\nПРОТОКОЛ ЕВАКУАЦІЇ: ЗАПУСК.",
     ambient: 'station_bg',
+    heartbeatBpm: 240,
+
    // ambient: 'ocean_hum_low',
    sound: 'alert_beep',
     next: 'journal_entry_1'
@@ -70,6 +73,7 @@ const STORY_STEPS = {
     text: "[БОРТЖУРНАЛ]. \nДень 312.\n'Прометей' на підході. \nНАРЕШТІ!",
     //ambient: 'ocean_hum_low',
     avatar: 'assets/images/ch_main/ch_print.png',
+    heartbeatBpm: 1240,
     next: 'journal_entry_2'
   },
 
@@ -214,7 +218,7 @@ const STORY_STEPS = {
     id: 'el_chat_3_2',
     type: 'line',
     speaker: 'Я',
-    text: "Це запис у журналі. Перевір.\nАле цей сигнал... Можливо, він живий?",
+    text: "Про це записано у бортжурналі.\nАле цей сигнал... Можливо, він живий?",
     next: 'memory_1_1'
   },
 
@@ -532,6 +536,7 @@ const STORY_STEPS = {
     sound: 'lock_hiss',
     next: 'ending_memory_2'
   },
+
   ending_memory_2: {
     id: 'ending_memory_2',
     type: 'line',
@@ -539,6 +544,7 @@ const STORY_STEPS = {
     text: "[ОСТАННІЙ ЗАПИС БОРТОВОГО ЖУРНАЛУ]\nМодуль 'Прометей'... евакуація підтверджена. Станція вимикається.\nАномальний сигнал зник. Моніторинг припинено. Всі системи функціонують у межах норми.\nЕкіпаж... відсутній. Я готова до стикування.\nКінець зв'язку.",
     next: 'ending_memory_3'
   },
+
   ending_memory_3: {
     id: 'ending_memory_3',
     type: 'line',
@@ -547,7 +553,8 @@ const STORY_STEPS = {
     avatar: 'assets/images/ch_main/ch_sad.png',
     next: 'title_memory'
   },
-  title_rational: { id: 'title_memory', type: 'ending', title: 'КІНЕЦЬ: ПАМ\'ЯТЬ' },
+
+  title_memory: { id: 'title_memory', type: 'ending', title: 'КІНЕЦЬ: ПАМ\'ЯТЬ' },
   // #endregion
 
   // #region --- ФІНАЛ 2: ОКЕАН (Emotional) ---
@@ -559,6 +566,7 @@ const STORY_STEPS = {
     sound: 'door_hydraulics',
     next: 'ending_ocean_2'
   },
+
   ending_ocean_2: {
     id: 'ending_ocean_2',
     type: 'line',
@@ -592,6 +600,7 @@ const STORY_STEPS = {
     text: "'Прометей', скасувати евакуацію. \nКай повернувся. \nСитуація стабільна. Ми продовжуємо дослідження. \nЦе... наш вибір.",
     next: 'ending_ocean_6'
   },
+
   ending_ocean_6: {
     id: 'ending_ocean_6',
     type: 'line',
@@ -599,6 +608,7 @@ const STORY_STEPS = {
     text: "Більше ніякої тиші. \nВін сміється, торкається мого обличчя і каже, що кохає. \nЦе він... Точно він.",
     next: 'ending_ocean_epilogue'
   },
+
   ending_ocean_epilogue: {
     id: 'ending_ocean_epilogue',
     type: 'line',
