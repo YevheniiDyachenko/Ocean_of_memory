@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Story Analytics V2.2 - Media & Assets</title>
+  <style>
+    :root { 
+      --bg: #1e1e1e; --panel: #252526; --text: #e0e0e0; 
+      --accent: #4caf50; --border: #3e3e42;
+      --c-text: #2196f3; --c-choice: #ffc107; --c-tech: #9c27b0;
+      --c-sound: #ff5722; --c-avatar: #00bcd4;
+    }
+    body { font-family: 'Segoe UI', Consolas, sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .container { width: 900px; max-width: 100%; }
+
+    /* --- UPLOAD BOX --- */
+    .upload-box { 
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--panel); border: 3px dashed #555; border-radius: 12px; 
+      padding: 60px 20px; margin: 20px 0 40px 0; cursor: pointer; transition: all 0.3s ease; min-height: 200px; box-sizing: border-box;
+    }
+    .upload-box:hover { border-color: var(--accent); background: #2b2b2e; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    .upload-box h2 { margin: 0 0 10px 0; color: #fff; font-size: 1.5em; }
+    .upload-box p { margin: 0; color: #888; font-size: 1.1em; }
+    .upload-icon { font-size: 4em; margin-bottom: 20px; opacity: 0.7; }
+    input[type="file"] { display: none; }
+
+    /* --- DASHBOARD --- */
+    .stats-header { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: var(--panel); padding: 20px; border-radius: 8px; border: 1px solid var(--border); position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .stat-card h3 { margin: 0 0 10px 0; color: #888; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-value { font-size: 2.8em; font-weight: bold; color: #fff; line-height: 1; }
+    .stat-sub { font-size: 0.9em; color: #666; margin-top: 5px; }
+    .accent-total .stat-value { color: var(--accent); }
+
+    /* Tables */
+    .table-card { background: var(--panel); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .table-header { background: #2d2d30; padding: 15px; font-weight: bold; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #333; word-wrap: break-word; }
+    th { color: #888; font-weight: normal; font-size: 0.9em; }
+    tr:last-child td { border-bottom: none; }
+    
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-family: monospace; }
+    .badge-field { background: #333; color: #ccc; }
+    
+    /* Progress Bars */
+    .bar-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+    .bar-fill { height: 100%; background: var(--accent); transition: width 0.5s; }
+    .bar-text { background: var(--c-text); }
+    .bar-choice { background: var(--c-choice); }
+    .bar-tech { background: var(--c-tech); }
+
+    /* --- ASSETS SPECIFIC STYLES --- */
+    details summary { cursor: pointer; color: var(--c-text); outline: none; user-select: none; font-size: 0.9em; }
+    details summary:hover { text-decoration: underline; }
+    details[open] summary { margin-bottom: 10px; color: #fff; }
+    
+    .id-list { display: flex; flex-wrap: wrap; gap: 5px; max-height: 150px; overflow-y: auto; padding-right: 5px; }
+    /* Scrollbar style for lists */
+    .id-list::-webkit-scrollbar { width: 4px; }
+    .id-list::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+    
+    .id-badge { 
+        background: #111; border: 1px solid #444; color: #aaa; 
+        padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-family: monospace; 
+    }
+    .id-badge:hover { border-color: var(--accent); color: var(--accent); }
+
+    .asset-name { font-weight: bold; color: #eee; }
+    .asset-count { font-size: 1.2em; font-weight: bold; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div style="text-align:center; margin-bottom: 20px;">
+      <h1>📊 ГЛИБОКИЙ АНАЛІЗ + ASSETS</h1>
+      <p style="color:#888">text • choices • tech • sound • avatar</p>
+    </div>
+
+    <label class="upload-box" id="drop-zone">
+      <div class="upload-icon">📂</div>
+      <h2>Завантажити story.js</h2>
+      <p>Натисніть сюди або перетягніть файл</p>
+      <input type="file" onchange="handleFile(this)" accept=".js,.txt">
+    </label>
+
+    <div id="dashboard" class="hidden">
+      
+      <div class="stats-header">
+        <div class="stat-card accent-total">
+          <h3>Всього слів</h3>
+          <div class="stat-value" id="total-sum">0</div>
+          <div class="stat-sub">Повний обсяг контенту</div>
+        </div>
+        <div class="stat-card">
+          <h3>Кількість знаків</h3>
+          <div class="stat-value" id="total-chars">0</div>
+          <div class="stat-sub">З пробілами</div>
+        </div>
+        <div class="stat-card">
+          <h3>Час читання</h3>
+          <div class="stat-value" id="read-time">0</div>
+          <div class="stat-sub">хвилин (200 слів/хв)</div>
+        </div>
+      </div>
+
+      <div class="table-card" style="border-left: 4px solid var(--c-sound);">
+        <div class="table-header">🔊 Аудіо ефекти (Sound)</div>
+        <table>
+          <thead>
+            <tr>
+              <th width="30%">Назва файлу</th>
+              <th width="15%">Кількість</th>
+              <th>Список ID (Де використовується)</th>
+            </tr>
+          </thead>
+          <tbody id="sound-body"></tbody>
+        </table>
+      </div>
+
+      <div class="table-card" style="border-left: 4px solid var(--c-avatar);">
+        <div class="table-header">👤 Аватари (Avatar)</div>
+        <table>
+          <thead>
+            <tr>
+              <th width="30%">Назва аватару</th>
+              <th width="15%">Кількість</th>
+              <th>Список ID (Де використовується)</th>
+            </tr>
+          </thead>
+          <tbody id="avatar-body"></tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">📁 Розподіл за типом поля</div>
+        <table>
+          <thead>
+            <tr>
+              <th width="40%">Тип поля</th>
+              <th>Слів</th>
+              <th>% від обсягу</th>
+            </tr>
+          </thead>
+          <tbody id="breakdown-body"></tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">🗣️ Статистика персонажів (Тільки діалоги)</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Персонаж</th>
+              <th>Реплік (Блоків)</th>
+              <th>Слів</th>
+              <th>Графік</th>
+            </tr>
+          </thead>
+          <tbody id="speakers-body"></tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">🧩 Складні елементи (lineCycleSuffix)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID блоку</th>
+                    <th>Зміст</th>
+                    <th>Слів</th>
+                </tr>
+            </thead>
+            <tbody id="complex-body"></tbody>
+        </table>
+      </div>
+
+      <button onclick="location.reload()" style="background:#333; color:#888; border:none; padding:10px 20px; cursor:pointer; width:100%; margin-top:20px; border-radius:4px;">🔄 Завантажити інший файл</button>
+
+    </div>
+  </div>
+
+<script>
+    // --- 1. IMPORT LOGIC ---
+    function handleFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => processStory(e.target.result);
+        reader.readAsText(file);
+    }
+
+    function processStory(rawText) {
+        const open = rawText.indexOf('{', rawText.indexOf('STORY_STEPS'));
+        let close = rawText.lastIndexOf('}');
+        
+        let counter = 0, startFound = false;
+        for(let i=open; i<rawText.length; i++) {
+            if(rawText[i]==='{'){ counter++; startFound=true; }
+            else if(rawText[i]==='}'){ counter--; }
+            if(startFound && counter===0){ close=i; break; }
+        }
+
+        let story;
+        try {
+            story = eval('(' + rawText.substring(open, close+1) + ')');
+        } catch(e) {
+            alert("Помилка парсингу файлу. Перевірте консоль.");
+            console.error(e);
+            return;
+        }
+
+        analyzeData(story);
+    }
+
+    // --- 2. ANALYSIS LOGIC ---
+    function analyzeData(story) {
+        let stats = {
+            totalWords: 0,
+            totalChars: 0,
+            byField: { 'text': 0, 'choices (labels)': 0, 'lineCycleSuffix': 0, 'glitchText': 0, 'speaker': 0 },
+            speakers: {}, 
+            complexLog: [],
+            // New structure for assets
+            assetStats: {
+                sounds: {},
+                avatars: {}
+            }
+        };
+
+        for (let key in story) {
+            const node = story[key];
+
+            // --- ASSET COLLECTION ---
+            // 1. Sounds
+            if (node.sound) {
+                if (!stats.assetStats.sounds[node.sound]) {
+                    stats.assetStats.sounds[node.sound] = [];
+                }
+                stats.assetStats.sounds[node.sound].push(key);
+            }
+
+            // 2. Avatars
+            if (node.avatar) {
+                if (!stats.assetStats.avatars[node.avatar]) {
+                    stats.assetStats.avatars[node.avatar] = [];
+                }
+                stats.assetStats.avatars[node.avatar].push(key);
+            }
+            // ------------------------
+
+            // Existing Analysis Logic
+            if (node.text) {
+                const w = countWords(node.text);
+                const c = node.text.length;
+                stats.byField.text += w;
+                addTotal(stats, w, c);
+
+                const sp = node.speaker || '(Без імені)';
+                if(!stats.speakers[sp]) stats.speakers[sp] = { words: 0, lines: 0 };
+                stats.speakers[sp].words += w;
+                stats.speakers[sp].lines++;
+            }
+
+            if (node.choices && Array.isArray(node.choices)) {
+                node.choices.forEach(choice => {
+                    if(choice.label) {
+                        const w = countWords(choice.label);
+                        const c = choice.label.length;
+                        stats.byField['choices (labels)'] += w;
+                        addTotal(stats, w, c);
+                    }
+                });
+            }
+
+            if (node.glitchText) {
+                const w = countWords(node.glitchText);
+                const c = node.glitchText.length;
+                stats.byField.glitchText += w;
+                addTotal(stats, w, c);
+            }
+
+            if (node.speaker) {
+                const w = countWords(node.speaker);
+                stats.byField.speaker += w;
+            }
+
+            if (node.lineCycleSuffix) {
+                let suffixWords = 0;
+                let suffixChars = 0;
+                let logDetails = [];
+
+                if (node.lineCycleSuffix.prefix) {
+                    const w = countWords(node.lineCycleSuffix.prefix);
+                    suffixWords += w;
+                    suffixChars += node.lineCycleSuffix.prefix.length;
+                    logDetails.push(`Prefix: "${node.lineCycleSuffix.prefix}"`);
+                }
+
+                if (node.lineCycleSuffix.words && Array.isArray(node.lineCycleSuffix.words)) {
+                    node.lineCycleSuffix.words.forEach(word => {
+                        const w = countWords(word);
+                        suffixWords += w;
+                        suffixChars += word.length;
+                        logDetails.push(`Var: "${word}"`);
+                    });
+                }
+
+                stats.byField.lineCycleSuffix += suffixWords;
+                addTotal(stats, suffixWords, suffixChars);
+                stats.complexLog.push({ id: key, details: logDetails.join('<br>'), count: suffixWords });
+            }
+        }
+
+        renderDashboard(stats);
+    }
+
+    function addTotal(stats, w, c) {
+        stats.totalWords += w;
+        stats.totalChars += c;
+    }
+
+    function countWords(str) {
+        if (typeof str !== 'string') return 0;
+        if (!str.trim()) return 0;
+        const clean = str.replace(/<[^>]*>/g, ' ');
+        return clean.trim().split(/\s+/).length;
+    }
+
+    // --- 3. RENDERING ---
+    function renderDashboard(stats) {
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('drop-zone').classList.add('hidden');
+
+        // Top Cards
+        document.getElementById('total-sum').innerText = stats.totalWords.toLocaleString();
+        document.getElementById('total-chars').innerText = stats.totalChars.toLocaleString();
+        document.getElementById('read-time').innerText = Math.ceil(stats.totalWords / 200);
+
+        // --- NEW: Render Assets ---
+        renderAssetTable('sound-body', stats.assetStats.sounds);
+        renderAssetTable('avatar-body', stats.assetStats.avatars);
+
+        // Breakdown Table
+        const breakdownBody = document.getElementById('breakdown-body');
+        breakdownBody.innerHTML = '';
+        const fieldMapping = [
+            { key: 'text', label: 'Діалоги (text)', color: 'bar-text' },
+            { key: 'choices (labels)', label: 'Вибори (choices)', color: 'bar-choice' },
+            { key: 'lineCycleSuffix', label: 'Циклічні суфікси', color: 'bar-tech' },
+            { key: 'glitchText', label: 'Глітч-ефекти', color: 'bar-tech' },
+        ];
+        fieldMapping.forEach(item => {
+            const count = stats.byField[item.key] || 0;
+            if (count === 0) return;
+            const percent = ((count / stats.totalWords) * 100).toFixed(1);
+            breakdownBody.innerHTML += `
+                <tr>
+                    <td><span class="badge badge-field">${item.label}</span></td>
+                    <td style="font-weight:bold">${count}</td>
+                    <td style="width: 200px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:2px;">
+                            <span>${percent}%</span>
+                        </div>
+                        <div class="bar-bg"><div class="bar-fill ${item.color}" style="width:${percent}%"></div></div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        // Speakers Table
+        const speakersBody = document.getElementById('speakers-body');
+        speakersBody.innerHTML = '';
+        const sortedSpeakers = Object.entries(stats.speakers).sort((a,b) => b[1].words - a[1].words);
+        const maxWords = sortedSpeakers.length > 0 ? sortedSpeakers[0][1].words : 1;
+        sortedSpeakers.forEach(([name, data]) => {
+            const percent = (data.words / maxWords) * 100;
+            speakersBody.innerHTML += `
+                <tr>
+                    <td><b>${name}</b></td>
+                    <td>${data.lines}</td>
+                    <td>${data.words}</td>
+                    <td style="width:150px">
+                        <div class="bar-bg"><div class="bar-fill bar-text" style="width:${percent}%"></div></div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        // Complex Log
+        const complexBody = document.getElementById('complex-body');
+        complexBody.innerHTML = '';
+        stats.complexLog.forEach(item => {
+            complexBody.innerHTML += `<tr><td><span class="badge badge-field">${item.id}</span></td><td style="font-size:0.85em; color:#aaa">${item.details}</td><td><b>${item.count}</b></td></tr>`;
+        });
+        if(stats.complexLog.length === 0) complexBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#666">Елементів не знайдено</td></tr>';
+    }
+
+    // Helper to render asset tables
+    function renderAssetTable(containerId, dataObj) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        
+        // Convert to array and sort by usage count (descending)
+        const entries = Object.entries(dataObj).sort((a, b) => b[1].length - a[1].length);
+
+        if (entries.length === 0) {
+            container.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#666; padding: 20px;">Не знайдено</td></tr>';
+            return;
+        }
+
+        entries.forEach(([name, ids]) => {
+            // Generate ID badges string
+            const badges = ids.map(id => `<span class="id-badge">${id}</span>`).join('');
+            
+            container.innerHTML += `
+                <tr>
+                    <td class="asset-name">${name}</td>
+                    <td class="asset-count">${ids.length}</td>
+                    <td>
+                        <details>
+                            <summary>Показати ID (${ids.length})</summary>
+                            <div class="id-list" style="margin-top:10px;">${badges}</div>
+                        </details>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+</script>
+</body>
+</html>

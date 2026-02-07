@@ -133,7 +133,7 @@ function showStep(step) {
   } else if (step.type === 'branch') {
     // Вибір фіналу за distortion: high (≥2), low (≤−2), mid
     var nd = step.nextByDistortion || {};
-    var id = distortion >= 3 ? nd.high : distortion <= -3 ? nd.low : nd.mid;
+    var id = distortion >= 3 ? nd.high : distortion <= -3 ? nd.low : distortion == 1 ? nd.high_alt : distortion == -1 ? nd.low_alt : nd.mid;
     if (id) goToStep(id);
   } else if (step.type === 'ending') {
     // Екран фіналу: затухання екрану, потім заголовок, статистика, кнопка «Перезапустити»
@@ -242,7 +242,7 @@ function scheduleAvatarNoiseBurst() {
 
 /** Ініціалізація: скрол коліщатком, клік по контенту (skip), титул або start-overlay, кнопка старту. */
 
-/** ����������� ������������� �����. */
+/** ����������� ������������� �����. */
 function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
     var el = document.documentElement;
